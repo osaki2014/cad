@@ -4020,11 +4020,12 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
       simActions.insertAdjacentHTML("afterend",'<button id="sim-force-toggle" type="button" title="重力・床反力・接触時の作用反作用を矢印と数値で表示">力の矢印：OFF</button>');
       const fb=document.getElementById("sim-force-toggle");
       fb.style.cssText="width:100%;margin-top:7px;border:1px solid #cfd0c9;border-radius:8px;background:#f5f5f1;padding:8px;font-size:9px;font-weight:800";
-      fb.onclick=()=>{__ff.showForces=!__ff.showForces;fb.classList.toggle("force-on",__ff.showForces);fb.textContent=`力の矢印：${__ff.showForces?"ON":"OFF"}`;if(!__ff.showForces)__ffClearForceVisuals();};
+      fb.onclick=()=>__ffSetForceMode(!__ff.showForces,true);
       fb.insertAdjacentHTML("afterend",'<div class="sim-projection"><span>投影</span><button class="active" data-projection="perspective">一点透視</button><button data-projection="orthographic">平行投影</button></div>');
       const projection=$$(".sim-projection");
       projection.style.cssText="display:grid;grid-template-columns:52px 1fr 1fr;gap:5px;align-items:center;margin-top:7px;font-size:8px;color:#777";
       projection.querySelectorAll("button").forEach(p=>{p.style.cssText="border:1px solid #cfd0c9;border-radius:7px;padding:7px 2px;font-size:8px;font-weight:800";p.onclick=()=>Tx(p.dataset.projection);});
+      document.querySelectorAll(".app-tabs button").forEach(tab=>tab.addEventListener("click",()=>queueMicrotask(()=>__ffSetForceMode(false,false))));
     }
   }
 
@@ -4157,19 +4158,27 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
   __ff.showForces=false;
   __ff.contactEvents=new Map();
   __ff.forceVisuals=[];
+  function __ffSetForceMode(on,immediate){
+    __ff.showForces=!!on;
+    const fb=document.getElementById("sim-force-toggle");
+    if(fb){fb.classList.toggle("force-on",__ff.showForces);fb.textContent=`力の矢印：${__ff.showForces?"ON":"OFF"}`;}
+    if(!__ff.showForces){__ffClearForceVisuals();__ff.contactEvents.clear();return;}
+    if(immediate){if(!D3)Qx();__ffUpdateForceVisuals();__ffUpdateForceLabels();}
+  }
   function __ffClearForceVisuals(){
-    for(const v of __ff.forceVisuals){c2.remove(v.line);c2.remove(v.head);v.line.geometry.dispose();v.line.material.dispose();v.head.geometry.dispose();v.head.material.dispose();v.label.remove();}
+    for(const v of __ff.forceVisuals){c2.remove(v.line);c2.remove(v.head);c2.remove(v.dot);v.line.geometry.dispose();v.line.material.dispose();v.head.geometry.dispose();v.head.material.dispose();v.dot.geometry.dispose();v.dot.material.dispose();v.label.remove();}
     __ff.forceVisuals.length=0;
   }
   function __ffForceColor(hex){return typeof hex==="number"?hex:parseInt(String(hex).replace("#",""),16)}
   function __ffDrawForce(start,dir,newtons,label,color){
     if(!Number.isFinite(newtons)||newtons<1e-5||dir.lengthSq()<1e-12)return;
-    const u=dir.clone().normalize(),length=Math.max(12,Math.min(62,14+10*Math.log10(1+newtons))),end=start.clone().addScaledVector(u,length),headLen=Math.min(7,length*.28),hex=__ffForceColor(color);
-    const line=new W5(new l2().setFromPoints([start,end]),new h4({color:hex,depthTest:false}));line.renderOrder=50;
-    const head=new E1(new Yt(2.2,headLen,10),new r3({color:hex,depthTest:false}));head.position.copy(end).addScaledVector(u,-headLen/2);head.quaternion.setFromUnitVectors(new A(0,1,0),u);head.renderOrder=51;
+    const u=dir.clone().normalize(),length=Math.max(8,Math.min(38,9+6*Math.log10(1+newtons))),end=start.clone().addScaledVector(u,length),headLen=Math.min(5.5,length*.3),shaftLen=Math.max(2,length-headLen*.72),hex=__ffForceColor(color),material=()=>new r3({color:hex,depthTest:false});
+    const line=new E1(new V2(.65,.65,shaftLen,10),material());line.position.copy(start).addScaledVector(u,shaftLen/2);line.quaternion.setFromUnitVectors(new A(0,1,0),u);line.renderOrder=50;
+    const head=new E1(new Yt(1.9,headLen,12),material());head.position.copy(end).addScaledVector(u,-headLen/2);head.quaternion.setFromUnitVectors(new A(0,1,0),u);head.renderOrder=51;
+    const dot=new E1(new X4(1.95,16,10),material());dot.position.copy(start);dot.renderOrder=52;
     const el=document.createElement("div");el.className="force-label";el.style.color=`#${hex.toString(16).padStart(6,"0")}`;el.textContent=`${label} ${newtons.toFixed(newtons<10?2:1)} N`;
     const p=end.clone().project(j1);el.style.left=`${(p.x+1)*r4.clientWidth/2}px`;el.style.top=`${(1-p.y)*r4.clientHeight/2}px`;
-    r4.appendChild(el);c2.add(line,head);__ff.forceVisuals.push({line,head,label:el,anchor:end.clone()});
+    r4.appendChild(el);c2.add(line,head,dot);__ff.forceVisuals.push({line,head,dot,label:el,anchor:end.clone()});
   }
   function __ffUpdateForceLabels(){
     for(const v of __ff.forceVisuals){
