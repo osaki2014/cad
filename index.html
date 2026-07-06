@@ -4763,7 +4763,7 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 (()=>{
   Lt.forEach((grid,index)=>{grid.position.y=[.035,.07,.105][index];grid.renderOrder=2+index;(Array.isArray(grid.material)?grid.material:[grid.material]).forEach(m=>{m.depthWrite=false;m.transparent=true;});});
   function effectiveDistance(){const d=j1.position.distanceTo(T2.target);return j1.isOrthographicCamera?d/Math.max(.05,j1.zoom):d;}
-  function updateGridLOD(){N5.visible=Z5;const d=effectiveDistance(),level=d<220?0:d<650?1:2;Lt.forEach((grid,index)=>{grid.visible=index===level;const materials=Array.isArray(grid.material)?grid.material:[grid.material];materials.forEach(m=>{m.opacity=Z5?.56:[.42,.58,.78][index];});});}
+  function updateGridLOD(){N5.visible=Z5;const d=effectiveDistance(),level=d<220?0:d<650?1:2;Lt.forEach((grid,index)=>{grid.visible=index>=level;const materials=Array.isArray(grid.material)?grid.material:[grid.material];materials.forEach(m=>{m.opacity=Z5?.56:[.42,.58,.78][index];});});}
   function applyOpaqueGround(){if(!Z5)return;const ground=U8[V("#ground-type").value]||U8.grass;N5.material.dispose();N5.material=new qe({color:ground.color,roughness:.96,metalness:0,transparent:false,opacity:1,depthWrite:true,side:u5});N5.receiveShadow=true;const grass=V("#ground-type").value==="grass";Lt.forEach(grid=>(Array.isArray(grid.material)?grid.material:[grid.material]).forEach(m=>m.color.set(grass?0x326b32:0x62645f)));}
   V("#ground-type").addEventListener("change",()=>{applyOpaqueGround();updateGridLOD()});
   const priorM9=m9;m9=function(){priorM9();applyOpaqueGround();updateGridLOD();};
