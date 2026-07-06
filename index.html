@@ -4756,7 +4756,20 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
   O3.hinoki={name:"ヒノキ",density:410,young:9000,poisson:.35,yield:35,tensile:60,color:"#d8b47f",roughness:.74,style:"wood",model:"等方近似"};
   const woodGroup=[...V("#material-select").querySelectorAll("optgroup")].find(g=>g.label==="木材");if(woodGroup&&!woodGroup.querySelector('[value="hinoki"]'))woodGroup.insertAdjacentHTML("beforeend",'<option value="hinoki">ヒノキ</option>');
   const shadowPlane=c2.getObjectByName("編集用影受け平面");if(shadowPlane){shadowPlane.material.dispose();shadowPlane.material=new tr({color:0x000000,opacity:.2});shadowPlane.receiveShadow=true;shadowPlane.position.y=-.04;}
-  const placementK7=K7;K7=function(type,options={}){const before=new Set(s2),result=placementK7(type,options),object=s2.find(o=>!before.has(o)&&o.userData.type===type);if(object)queueMicrotask(()=>{object.updateMatrixWorld(true);object.geometry.computeBoundingBox();object.geometry.computeBoundingSphere();if(S1.includes(object)){a5([object]);l9();}b5();h2();});return result;};
+  const placementK7=K7;K7=function(type,options={}){const before=new Set(s2),result=placementK7(type,options),object=s2.find(o=>!before.has(o)&&o.userData.type===type);if(object)queueMicrotask(()=>{object.updateMatrixWorld(true);object.geometry.computeBoundingBox();object.geometry.computeBoundingSphere();Z7();if(S1.includes(object)){a5([object]);l9();}b5();h2();});return result;};
+})();
+
+/* Grid LOD, opaque simulation ground, camera safety, and torus dimension cleanup. */
+(()=>{
+  Lt.forEach((grid,index)=>{grid.position.y=[.035,.07,.105][index];grid.renderOrder=2+index;(Array.isArray(grid.material)?grid.material:[grid.material]).forEach(m=>{m.depthWrite=false;m.transparent=true;});});
+  function effectiveDistance(){const d=j1.position.distanceTo(T2.target);return j1.isOrthographicCamera?d/Math.max(.05,j1.zoom):d;}
+  function updateGridLOD(){N5.visible=Z5;const d=effectiveDistance(),level=d<220?0:d<650?1:2;Lt.forEach((grid,index)=>{grid.visible=index===level;const materials=Array.isArray(grid.material)?grid.material:[grid.material];materials.forEach(m=>{m.opacity=Z5?.56:[.42,.58,.78][index];});});}
+  function applyOpaqueGround(){if(!Z5)return;const ground=U8[V("#ground-type").value]||U8.grass;N5.material.dispose();N5.material=new qe({color:ground.color,roughness:.96,metalness:0,transparent:false,opacity:1,depthWrite:true,side:u5});N5.receiveShadow=true;const grass=V("#ground-type").value==="grass";Lt.forEach(grid=>(Array.isArray(grid.material)?grid.material:[grid.material]).forEach(m=>m.color.set(grass?0x326b32:0x62645f)));}
+  V("#ground-type").addEventListener("change",()=>{applyOpaqueGround();updateGridLOD()});
+  const priorM9=m9;m9=function(){priorM9();applyOpaqueGround();updateGridLOD();};
+  const originalBx=Bx;Bx=function(){const o=S1.length===1?S1[0]:null;if(o?.userData.type!=="torus")return originalBx();const type=o.userData.type;o.userData.type="torus-horizontal";try{return originalBx();}finally{o.userData.type=type;}};
+  B7.near=.05;B7.far=10000;B7.updateProjectionMatrix();w3.near=.05;w3.far=10000;w3.updateProjectionMatrix();T2.minDistance=2;T2.maxDistance=2500;
+  const safePa=Pa;Pa=function(t){if(!Number.isFinite(j1.position.x+j1.position.y+j1.position.z+T2.target.x+T2.target.y+T2.target.z)){j1.position.set(130,110,150);T2.target.set(0,12,0);}if(j1.isOrthographicCamera){j1.zoom=Math.max(.05,Math.min(100,j1.zoom));j1.updateProjectionMatrix();}updateGridLOD();return safePa(t)};updateGridLOD();
 })();
 
 </script>
