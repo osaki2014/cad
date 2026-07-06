@@ -3996,6 +3996,8 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
       .fem-actions #fem-inp-export{background:#111;color:#fff;border-color:#111}
       .fem-industrial-note{margin-top:7px;padding:7px;border-radius:8px;background:#eef6ff;color:#35506c;font-size:8px;line-height:1.45}
       .sim-state .contact-note{display:block;margin-top:3px;color:#6f746a}
+      #sim-force-toggle.force-on{background:#c9ff4f;color:#20211c;border-color:#20211c}
+      .force-label{position:absolute;z-index:7;pointer-events:none;padding:3px 6px;border-radius:5px;background:#fffffff2;border:1px solid currentColor;font:800 9px ui-monospace,monospace;white-space:nowrap;transform:translate(6px,-50%)}
     `;
     document.head.appendChild(st);
   }
@@ -4012,6 +4014,13 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
     }
     const b=document.getElementById("fem-inp-export");
     if(b) b.onclick=__ffExportInp;
+    const simActions=$$(".sim-actions");
+    if(simActions && !document.getElementById("sim-force-toggle")){
+      simActions.insertAdjacentHTML("afterend",'<button id="sim-force-toggle" type="button" title="重力・床反力・接触時の作用反作用を矢印と数値で表示">力の矢印：OFF</button>');
+      const fb=document.getElementById("sim-force-toggle");
+      fb.style.cssText="width:100%;margin-top:7px;border:1px solid #cfd0c9;border-radius:8px;background:#f5f5f1;padding:8px;font-size:9px;font-weight:800";
+      fb.onclick=()=>{__ff.showForces=!__ff.showForces;fb.classList.toggle("force-on",__ff.showForces);fb.textContent=`力の矢印：${__ff.showForces?"ON":"OFF"}`;if(!__ff.showForces)__ffClearForceVisuals();};
+    }
   }
 
   function __ffSafeName(s){
@@ -4140,6 +4149,41 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
     return (o.geometry.boundingSphere?.radius||1)*sc;
   }
 
+  __ff.showForces=false;
+  __ff.contactEvents=new Map();
+  __ff.forceVisuals=[];
+  function __ffClearForceVisuals(){
+    for(const v of __ff.forceVisuals){c2.remove(v.line);c2.remove(v.head);v.line.geometry.dispose();v.line.material.dispose();v.head.geometry.dispose();v.head.material.dispose();v.label.remove();}
+    __ff.forceVisuals.length=0;
+  }
+  function __ffForceColor(hex){return typeof hex==="number"?hex:parseInt(String(hex).replace("#",""),16)}
+  function __ffDrawForce(start,dir,newtons,label,color){
+    if(!Number.isFinite(newtons)||newtons<1e-5||dir.lengthSq()<1e-12)return;
+    const u=dir.clone().normalize(),length=Math.max(12,Math.min(62,14+10*Math.log10(1+newtons))),end=start.clone().addScaledVector(u,length),headLen=Math.min(7,length*.28),hex=__ffForceColor(color);
+    const line=new W5(new l2().setFromPoints([start,end]),new h4({color:hex,depthTest:false}));line.renderOrder=50;
+    const head=new E1(new Yt(2.2,headLen,10),new r3({color:hex,depthTest:false}));head.position.copy(end).addScaledVector(u,-headLen/2);head.quaternion.setFromUnitVectors(new A(0,1,0),u);head.renderOrder=51;
+    const el=document.createElement("div");el.className="force-label";el.style.color=`#${hex.toString(16).padStart(6,"0")}`;el.textContent=`${label} ${newtons.toFixed(newtons<10?2:1)} N`;
+    const p=end.clone().project(j1);el.style.left=`${(p.x+1)*r4.clientWidth/2}px`;el.style.top=`${(1-p.y)*r4.clientHeight/2}px`;
+    r4.appendChild(el);c2.add(line,head);__ff.forceVisuals.push({line,head,label:el});
+  }
+  function __ffRememberContact(a,b,n,point,impulse){
+    if(impulse<=0)return;
+    const force=impulse/Math.max(__ff.stepDt||.001,1e-6)/1000;
+    const key=b?[a.userData.id,b.userData.id].sort().join(":"):`ground:${a.userData.id}`;
+    __ff.contactEvents.set(key,{a,b,normal:n.clone(),point:point.clone(),force,expires:performance.now()+500});
+  }
+  function __ffUpdateForceVisuals(){
+    __ffClearForceVisuals();if(!__ff.showForces)return;
+    const g=($$("#sim-gravity")?.value==="moon"?1.62:9.80665);
+    for(const o of F3()){const st=J2.get(o);if(!st)continue;__ffDrawForce(__ffBodyCenter(o),new A(0,-1,0),Math.max(0,st.mass||0)*g,"重力",0x2468e8);}
+    const now=performance.now();
+    for(const [key,c] of __ff.contactEvents){
+      if(c.expires<now||!c.a.parent||(c.b&&!c.b.parent)){__ff.contactEvents.delete(key);continue;}
+      if(c.b){__ffDrawForce(c.point,c.normal,c.force,"作用",0xe63b32);__ffDrawForce(c.point,c.normal.clone().negate(),c.force,"反作用",0x13a05f);}
+      else __ffDrawForce(c.point,c.normal,c.force,"床反力",0x13a05f);
+    }
+  }
+
   function __ffVelAt(o,s,point){
     const c=__ffBodyCenter(o),r=point.clone().sub(c);
     return s.velocity.clone().add(s.angular.clone().cross(r));
@@ -4163,11 +4207,13 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
     const vb=sb?sb.velocity.clone().add(sb.angular.clone().cross(rb)):new A();
     const rv=va.sub(vb);
     const vn=rv.dot(n);
+    let normalImpulse=0;
     if(vn<0){
       const ia=__ffInvInertia(sa), ib=__ffInvInertia(sb);
       const raN=ra.clone().cross(n), rbN=rb.clone().cross(n);
       const denom=invSum+ia*raN.lengthSq()+ib*rbN.lengthSq();
       const j=-(1+rest)*vn/Math.max(denom,1e-12);
+      normalImpulse=j;
       const impulse=n.clone().multiplyScalar(j);
       if(invA>0){
         sa.velocity.addScaledVector(impulse,invA);
@@ -4199,6 +4245,7 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
         }
       }
     }
+    __ffRememberContact(a,b,n,point,normalImpulse);
   }
 
   function __ffOBB(o){
@@ -4224,6 +4271,12 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
     return Math.abs(axis.dot(obb.axes[0]))*obb.half[0]+Math.abs(axis.dot(obb.axes[1]))*obb.half[1]+Math.abs(axis.dot(obb.axes[2]))*obb.half[2];
   }
 
+  function __ffOBBSupport(obb,dir){
+    const p=obb.center.clone();
+    for(let i=0;i<3;i++)p.addScaledVector(obb.axes[i],obb.half[i]*(dir.dot(obb.axes[i])>=0?1:-1));
+    return p;
+  }
+
   function __ffOBBContact(a,b){
     const Aobb=__ffOBB(a), Bobb=__ffOBB(b), d=Bobb.center.clone().sub(Aobb.center);
     const axes=[...Aobb.axes,...Bobb.axes];
@@ -4242,7 +4295,7 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
         bestAxis=axis.multiplyScalar(dist>=0?-1:1); // B -> A
       }
     }
-    const point=Aobb.center.clone().add(Bobb.center).multiplyScalar(.5);
+    const point=__ffOBBSupport(Aobb,bestAxis.clone().negate()).add(__ffOBBSupport(Bobb,bestAxis)).multiplyScalar(.5);
     return {normal:bestAxis, penetration:bestPen, point};
   }
 
@@ -4294,8 +4347,11 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
   function __ffGroundContact(o,ground){
     const box=new K1().setFromObject(o);
     if(box.min.y>=0) return;
-    const center=box.getCenter(new A);
-    const point=new A(center.x,0,center.z);
+    o.updateMatrixWorld(true);
+    const pos=o.geometry.attributes.position,tmp=new A(),low=[];
+    let minY=Infinity;
+    for(let i=0;i<pos.count;i++){tmp.fromBufferAttribute(pos,i).applyMatrix4(o.matrixWorld);if(tmp.y<minY-.08){minY=tmp.y;low.length=0;low.push(tmp.clone());}else if(tmp.y<=minY+.08)low.push(tmp.clone());}
+    const point=low.reduce((sum,p)=>sum.add(p),new A()).multiplyScalar(1/Math.max(1,low.length));point.y=0;
     const st=J2.get(o);
     const rest=Math.min(st?.restitution??.32, ground.hardness>1000?.28:.12);
     __ffApplyContact(o,null,new A(0,1,0),-box.min.y,point,ground.friction,rest);
@@ -4342,12 +4398,14 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
   const __ffPreviousB3 = B3;
   B3 = function(dt){
     if(!D3){ Qx(); }
-    const steps=Math.max(1,Math.min(16,Math.ceil(dt/.0035)));
+    const steps=Math.max(1,Math.min(32,Math.ceil(dt/.0015)));
     const h=dt/steps;
     for(let s=0;s<steps;s++){
+      __ff.stepDt=h;
       __ffIntegrate(h);
-      for(let k=0;k<5;k++) __ffSolveContacts();
+      for(let k=0;k<10;k++) __ffSolveContacts();
     }
+    __ffUpdateForceVisuals();
     for(const o of F3()){
       const st=J2.get(o);
       if(!st) continue;
@@ -4496,6 +4554,30 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
   window.addEventListener("keydown",e=>{if(e.key==="Shift")rotationSnap(true);});
   window.addEventListener("keyup",e=>{if(e.key==="Shift")rotationSnap(false);});
   window.addEventListener("blur",()=>rotationSnap(false));
+})();
+
+/* Transform-aware repeated duplication: first copy overlaps, following copies
+   repeat the previous translation and rotation delta. */
+(()=>{
+  let chain=null;
+  function cloneIntoScene(source){const copy=H8(source,0);c2.add(copy);s2.push(copy);return copy;}
+  function sameCurrent(){return chain&&chain.current.length===S1.length&&chain.current.every(o=>S1.includes(o));}
+  const button=document.getElementById("duplicate");
+  button.onclick=()=>{
+    if(!S1.length)return;
+    let made=[];
+    if(!sameCurrent()){
+      const base=[...S1];made=base.map(cloneIntoScene);chain={base,current:made};
+      X1(`${made.length}個を同じ位置に複製しました。移動・回転後にCtrl+Dで変換を反復できます`);
+    }else{
+      made=chain.current.map((cur,i)=>{
+        const base=chain.base[i],copy=cloneIntoScene(cur),dp=cur.position.clone().sub(base.position),dq=cur.quaternion.clone().multiply(base.quaternion.clone().invert());
+        copy.position.copy(cur.position).add(dp);copy.quaternion.copy(dq).multiply(cur.quaternion).normalize();return copy;
+      });
+      chain={base:chain.current,current:made};X1(`${made.length}個を前回と同じ移動量・回転角で連続複製しました`);
+    }
+    a5(made);q2();
+  };
 })();
 
 </script>
