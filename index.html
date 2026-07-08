@@ -3973,26 +3973,1790 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 `),n=new Blob([t],{type:"text/csv;charset=utf-8"}),i=document.createElement("a");i.href=URL.createObjectURL(n),i.download=`3DCADpp_FEM_${new Date().toISOString().slice(0,10)}.csv`,i.click(),setTimeout(()=>URL.revokeObjectURL(i.href),1e3),X1("FEM監査CSVを保存しました")}V("#edit-points").onclick=()=>{const e=S1[0];X2===e?j6():Cx(e),h2()};let R7=[];function H8(e,q=12){const t=e.clone(!1);return t.geometry=e.geometry.clone(),t.material=e.material.clone(),t.position.copy(e.position),t.position.x+=q,t.userData={...e.userData,id:crypto.randomUUID(),engineeringMaterial:e.userData.engineeringMaterial?{...e.userData.engineeringMaterial}:void 0,controlPoints:e.userData.controlPoints?.map(n=>[...n]),sourceSnapshot:e.userData.sourceSnapshot?structuredClone(e.userData.sourceSnapshot):void 0},t.castShadow=!0,t.receiveShadow=!0,t}function D_(){S1.length&&(R7=S1.map(e=>H8(e,0)),X1(`${S1.length}個のオブジェクトをコピーしました`))}function Aa(){if(!R7.length)return;const e=R7.map(q=>{const t=H8(q,12);return c2.add(t),s2.push(t),t});R7=e.map(q=>H8(q,0)),a5(e),q2(),X1(`${e.length}個のオブジェクトを貼り付けました`)}V("#duplicate").onclick=()=>{S1.length&&(R7=S1.map(e=>H8(e,0)),Aa())};V("#undo").onclick=()=>{l3.length<=1||(V6.push(l3.pop()),ge(l3.at(-1)),o9())};V("#redo").onclick=()=>{if(!V6.length)return;const e=V6.pop();l3.push(e),ge(e),o9()};V("#zoom-in").onclick=()=>{j1.isOrthographicCamera?(j1.zoom*=1.18,j1.updateProjectionMatrix()):j1.position.multiplyScalar(.85)};V("#zoom-out").onclick=()=>{j1.isOrthographicCamera?(j1.zoom/=1.18,j1.updateProjectionMatrix()):j1.position.multiplyScalar(1.15)};V("#fit").onclick=()=>{j1.position.set(130,110,150),j1.isOrthographicCamera&&(j1.zoom=1,j1.updateProjectionMatrix()),T2.target.set(0,12,0)};document.querySelectorAll('.shape-card[draggable="true"]').forEach(e=>{e.addEventListener("dragstart",q=>{q.dataTransfer.setData("text/formforge-shape",e.dataset.shape),q.dataTransfer.effectAllowed="copy",e.classList.add("dragging")}),e.addEventListener("dragend",()=>{e.classList.remove("dragging"),r4.classList.remove("drop-active")})});a2.addEventListener("dragover",e=>{e.preventDefault(),e.dataTransfer.dropEffect="copy",r4.classList.add("drop-active")});a2.addEventListener("dragleave",e=>{r4.contains(e.relatedTarget)||r4.classList.remove("drop-active")});a2.addEventListener("drop",e=>{e.preventDefault(),r4.classList.remove("drop-active");const q=e.dataTransfer.getData("text/formforge-shape");if(!q)return;const t=Se(e),n=Number(V("#snap").value);if(!t)return;n&&(t.x=Math.round(t.x/n)*n,t.z=Math.round(t.z/n)*n);const i=K7(q,{x:t.x,z:t.z});i.material.transparent=!0,i.material.opacity=.08,i.userData.spawnTime=performance.now();const l=V(".drop-ripple");l.style.left=e.offsetX+"px",l.style.top=e.offsetY+"px",l.classList.remove("show"),l.offsetWidth,l.classList.add("show"),setTimeout(()=>l.classList.remove("show"),700)});const V8=new Y8,G8=new l1;let Z3=null;function I_(e){const q=T2.target.clone(),t=j1.position.distanceTo(q),n=j1.position.clone(),i=q.clone().add(e.clone().normalize().multiplyScalar(t)),l=performance.now();Z3={start:n,end:i,beg:l,duration:420,target:q}}const Ra=f5.material.map(e=>e.color.clone());G6.addEventListener("pointermove",e=>{const q=G6.getBoundingClientRect(),t=e.clientX-q.left,n=e.clientY-q.top;G8.set(t/q.width*2-1,-(n/q.height*2-1)),V8.setFromCamera(G8,W6),f5.material.forEach((s,o)=>s.color.copy(Ra[o])),z8.forEach(s=>s.m.visible=!1),k8.forEach(s=>s.visible=!1),f5.updateMatrixWorld(!0);let i=null,l=1/0;for(const s of z8){const o=new A(s.x*.675,s.y*.675,s.z*.675).applyMatrix4(f5.matrixWorld).project(W6),r=(o.x+1)*q.width/2,c=(1-o.y)*q.height/2,m=Math.hypot(t-r,n-c);m<l&&(l=m,i=s)}if(i&&l<15){i.m.visible=!0;const{x:s,y:o,z:r}=i;k8.forEach(c=>{const m=c.userData;c.visible=m.axis==="x"&&m.a===o&&m.b===r||m.axis==="y"&&m.a===s&&m.b===r||m.axis==="z"&&m.a===s&&m.b===o});return}const a=V8.intersectObject(f5,!1)[0];a&&f5.material[a.face.materialIndex]?.color.set(13238095)});G6.addEventListener("pointerleave",()=>{f5.material.forEach((e,q)=>e.color.copy(Ra[q])),z8.forEach(e=>e.m.visible=!1),k8.forEach(e=>e.visible=!1)});G6.addEventListener("click",e=>{const q=G6.getBoundingClientRect();G8.set((e.clientX-q.left)/q.width*2-1,-((e.clientY-q.top)/q.height*2-1)),V8.setFromCamera(G8,W6);const t=V8.intersectObject(f5,!1)[0];if(!t)return;const n=f5.worldToLocal(t.point.clone()),i=new A;for(const l of["x","y","z"])Math.abs(n[l])>.28&&(i[l]=Math.sign(n[l]));i.lengthSq()===0&&i.copy(t.face.normal),I_(i)});const U3=new Y8,Cq=new l1,L_=new M5(new A(0,1,0),0);function Q4(e){const q=a2.getBoundingClientRect();return Cq.x=(e.clientX-q.left)/q.width*2-1,Cq.y=-(e.clientY-q.top)/q.height*2+1,U3.setFromCamera(Cq,j1),q}function Se(e){Q4(e);const q=new A;return U3.ray.intersectPlane(L_,q)?q:null}let H7=!1;const we=new M5;a2.addEventListener("pointerdown",e=>{!Z5||!$2.visible||(Q4(e),U3.intersectObject($2,!1).length&&(e.preventDefault(),e.stopImmediatePropagation(),H7=!0,we.setFromNormalAndCoplanarPoint(j1.getWorldDirection(new A),$2.position),a2.setPointerCapture(e.pointerId)))},{capture:!0});a2.addEventListener("pointermove",e=>{if(!H7)return;e.preventDefault(),e.stopImmediatePropagation(),Q4(e);const q=new A;U3.ray.intersectPlane(we,q)&&($2.position.copy(q),D2.position.copy(q),D2.target.position.copy(T2.target),D2.target.updateMatrixWorld())},{capture:!0});a2.addEventListener("pointerup",e=>{H7&&(e.preventDefault(),e.stopImmediatePropagation(),H7=!1,a2.releasePointerCapture(e.pointerId),X1("太陽光源の位置を変更しました"))},{capture:!0});a2.addEventListener("pointerdown",e=>{Z5||!$2.visible||(Q4(e),U3.intersectObject($2,!1).length&&(e.preventDefault(),e.stopImmediatePropagation(),H7=!0,we.setFromNormalAndCoplanarPoint(j1.getWorldDirection(new A),$2.position),a2.setPointerCapture(e.pointerId)))},{capture:!0});function N_(){if(S3&&c2.remove(S3),P3.length<2)return;const e=new l2().setFromPoints(P3),q=new h4({color:2105628});S3=new W5(e,q),c2.add(S3)}function F_(e,q,t,n,i,l){const a=new K1().setFromObject(e),s=[];for(const h of[a.min.x,a.max.x])for(const u of[a.min.y,a.max.y])for(const p of[a.min.z,a.max.z]){const x=new A(h,u,p).project(j1);s.push({x:(x.x+1)*l.width/2,y:(1-x.y)*l.height/2})}const o=Math.min(...s.map(h=>h.x)),r=Math.max(...s.map(h=>h.x)),c=Math.min(...s.map(h=>h.y)),m=Math.max(...s.map(h=>h.y));return r>=q&&o<=n&&m>=t&&c<=i}a2.addEventListener("pointerdown",e=>{if(Z5||C2.dragging||C2.axis)return;if(M8={x:e.offsetX,y:e.offsetY},o4){const i=Se(e);if(!i)return;O8=!0,P3=[i.setY((Number(V("#curve-size").value)||8)/2)],a2.setPointerCapture(e.pointerId);return}Q4(e);const q=U3.intersectObjects(O7,!1)[0]?.object;if(q){O4=q,a5([X2]),O4=q,C2.detach(),C2.setMode("translate"),C2.attach(q);return}const t=U3.intersectObjects(s2,!1)[0]?.object;if(q5==="select"&&!t){h5={x:e.offsetX,y:e.offsetY};const i=V(".selection-box");i.style.cssText=`display:block;left:${h5.x}px;top:${h5.y}px;width:0;height:0`,a2.setPointerCapture(e.pointerId);return}const n=e.ctrlKey||e.metaKey||e.shiftKey;a5(n&&t?S1.includes(t)?S1.filter(i=>i!==t):[...S1,t]:t?[t]:[])});a2.addEventListener("pointermove",e=>{if(O8){const q=Se(e);q&&(q.y=(Number(V("#curve-size").value)||8)/2,(!P3.length||q.distanceTo(P3.at(-1))>1.5)&&(P3.push(q),N_()));return}if(h5){const q=Math.min(h5.x,e.offsetX),t=Math.min(h5.y,e.offsetY),n=Math.abs(e.offsetX-h5.x),i=Math.abs(e.offsetY-h5.y),l=V(".selection-box");l.style.left=q+"px",l.style.top=t+"px",l.style.width=n+"px",l.style.height=i+"px"}});a2.addEventListener("pointerup",e=>{if(O8){O8=!1,a2.releasePointerCapture(e.pointerId),S3&&(c2.remove(S3),S3.geometry.dispose(),S3.material.dispose(),S3=null),P3.length>2?(Rx(P3),q0("translate")):X1("もう少し長くドラッグして描いてください"),P3=[];return}if(h5){const q=a2.getBoundingClientRect(),t=Math.min(h5.x,e.offsetX),n=Math.max(h5.x,e.offsetX),i=Math.min(h5.y,e.offsetY),l=Math.max(h5.y,e.offsetY);V(".selection-box").style.display="none",a2.releasePointerCapture(e.pointerId);const a=s2.filter(s=>F_(s,t,i,n,l,q));a5(e.ctrlKey||e.metaKey?[...new Set([...S1,...a])]:a),h5=null}});a2.addEventListener("pointerup",e=>{if(q5!=="select"||!h5||!M8)return;Math.hypot(e.offsetX-M8.x,e.offsetY-M8.y)<3&&queueMicrotask(()=>{q5==="select"&&q0("select")})},{capture:!0});window.addEventListener("keydown",e=>{const q=e.metaKey||e.ctrlKey,t=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)||document.activeElement.isContentEditable;(e.key==="Delete"||e.key==="Backspace")&&!t&&r9(),!t&&(q&&e.key.toLowerCase()==="c"&&(e.preventDefault(),D_()),q&&e.key.toLowerCase()==="v"&&(e.preventDefault(),Aa()),q&&e.key.toLowerCase()==="z"&&(e.preventDefault(),e.shiftKey?V("#redo").click():V("#undo").click()),q&&e.key.toLowerCase()==="d"&&(e.preventDefault(),V("#duplicate").click()),q&&e.key.toLowerCase()==="g"&&(e.preventDefault(),fa()))});function U_(e){const q=U8[V("#ground-type").value]||U8.grass,t=Math.max(.18,Math.min(1,Math.log10(q.hardness+10)/4.5));for(const n of F3()){const i=J2.get(n),l=new K1().setFromObject(n);if(!i||l.min.y>.08)continue;const a=n.userData.type==="sphere",s=Math.exp(-q.friction*(a?.06:18)*e);if(i.velocity.x*=s,i.velocity.z*=s,a){const o=new A(i.velocity.x,0,i.velocity.z),r=Math.max(1,i.radius||l.getSize(new A).y/2);o.lengthSq()>1e-8&&i.angular.lerp(new A(0,1,0).cross(o).multiplyScalar(1/r),Math.min(1,e*8))}i.velocity.y>0&&(i.velocity.y*=t)}}function Ca(e){if(ye){const q=Math.min(.025,Math.max(.001,(e-Nt)/1e3))*Number(V("#sim-speed").value||1);Nt=e,A7+=q,B3(q),U_(q),V("#sim-elapsed").textContent=`${A7.toFixed(1)}秒`;const t=Number(V("#sim-duration").value||0);t>0&&A7>=t&&(c9(),V("#sim-state").textContent=`設定時間 ${t}秒で停止しました`)}requestAnimationFrame(Ca)}requestAnimationFrame(Ca);function d9(){const e=r4.clientWidth,q=r4.clientHeight;Y7.setSize(e,q,!1),B7.aspect=e/q,B7.updateProjectionMatrix();const t=300;w3.left=-t*e/q/2,w3.right=t*e/q/2,w3.top=t/2,w3.bottom=-t/2,w3.updateProjectionMatrix()}new ResizeObserver(d9).observe(r4);function Pa(e){if(Z3){const q=Math.min(1,(e-Z3.beg)/Z3.duration),t=1-Math.pow(1-q,3);j1.position.lerpVectors(Z3.start,Z3.end,t),T2.target.copy(Z3.target),q>=1&&(Z3=null)}s2.forEach(q=>{if(q.userData.spawnTime){const t=Math.min(1,(e-q.userData.spawnTime)/420);q.material.opacity=.08+.92*(1-Math.pow(1-t,3)),t>=1&&(q.material.opacity=1,q.material.transparent=!!q.userData.hole,delete q.userData.spawnTime)}}),T2.update(),v8.forEach(q=>q.update()),Bx(),a9(),m_(),f5.quaternion.copy(j1.quaternion).invert(),Y7.render(c2,j1),t9.render(ma,W6),requestAnimationFrame(Pa)}d9();requestAnimationFrame(Pa);q2();
 
 
-/* === 2026-07 industrial-FEM / robust-contact patch =========================
-   This patch keeps the app single-file, but moves the simulation toward
-   engineering practice:
-   - sequential impulse contact solver with substeps, positional correction,
-     friction and angular impulse
-   - OBB SAT for non-spherical object collisions
-   - exact sphere-sphere and sphere-triangle narrow phase
-   - CalculiX/Abaqus-style .inp export from the browser tetra mesh
-   The in-browser FEM remains a prototype; the .inp export is the preferred
-   verification path for design-grade analysis.
-=========================================================================== */
-(()=>{
-  const __ff = {};
-  const $$ = (s)=>V(s);
+/* ============================================================================
+   FF2 CORE — industrial-grade rigid-body dynamics + FEM kernels.
+   Pure JavaScript, no DOM / three.js dependencies (testable in Node).
+   Units: mm, kg, s  (=> forces are milli-Newton internally; g = 9806.65 mm/s^2)
+   ========================================================================= */
+const FF2 = (() => {
+    "use strict";
 
-  function __ffAddStyle(){
-    if(document.getElementById("ff-industrial-fem-style")) return;
-    const st=document.createElement("style");
-    st.id="ff-industrial-fem-style";
-    st.textContent=`
+    /* ---------------------------------------------------------------- vec3 */
+    const v3 = () => new Float64Array(3);
+    const vset = (o, x, y, z) => (o[0] = x, o[1] = y, o[2] = z, o);
+    const vcopy = (o, a) => (o[0] = a[0], o[1] = a[1], o[2] = a[2], o);
+    const vadd = (o, a, b) => (o[0] = a[0] + b[0], o[1] = a[1] + b[1], o[2] = a[2] + b[2], o);
+    const vsub = (o, a, b) => (o[0] = a[0] - b[0], o[1] = a[1] - b[1], o[2] = a[2] - b[2], o);
+    const vscale = (o, a, s) => (o[0] = a[0] * s, o[1] = a[1] * s, o[2] = a[2] * s, o);
+    const vaddScaled = (o, a, s) => (o[0] += a[0] * s, o[1] += a[1] * s, o[2] += a[2] * s, o);
+    const vdot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const vcross = (o, a, b) => {
+        const x = a[1] * b[2] - a[2] * b[1], y = a[2] * b[0] - a[0] * b[2], z = a[0] * b[1] - a[1] * b[0];
+        return vset(o, x, y, z);
+    };
+    const vlen2 = a => vdot(a, a);
+    const vlen = a => Math.sqrt(vlen2(a));
+    const vnorm = (o, a) => {
+        const l = vlen(a);
+        return l > 1e-12 ? vscale(o, a, 1 / l) : vset(o, 0, 1, 0);
+    };
+
+    /* --------------------------------------------------- quaternion [x,y,z,w] */
+    const qIdent = () => Float64Array.from([0, 0, 0, 1]);
+    function qNormalize(q) {
+        const l = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+        q[0] /= l; q[1] /= l; q[2] /= l; q[3] /= l;
+        return q;
+    }
+    // integrate dq/dt = 0.5 * w ⊗ q
+    function qIntegrate(q, w, dt) {
+        const hx = w[0] * dt * .5, hy = w[1] * dt * .5, hz = w[2] * dt * .5;
+        const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+        q[0] += hw3(hx, qw, hy, qz, -hz, qy);
+        q[1] += hw3(hy, qw, hz, qx, -hx, qz);
+        q[2] += hw3(hz, qw, hx, qy, -hy, qx);
+        q[3] += -hx * qx - hy * qy - hz * qz;
+        return qNormalize(q);
+    }
+    const hw3 = (a, b, c, d, e, f) => a * b + c * d + e * f;
+    // rotate vector by quaternion
+    function qRotate(o, q, v) {
+        const x = q[0], y = q[1], z = q[2], w = q[3];
+        const tx = 2 * (y * v[2] - z * v[1]), ty = 2 * (z * v[0] - x * v[2]), tz = 2 * (x * v[1] - y * v[0]);
+        return vset(o,
+            v[0] + w * tx + y * tz - z * ty,
+            v[1] + w * ty + z * tx - x * tz,
+            v[2] + w * tz + x * ty - y * tx);
+    }
+    function qRotateInv(o, q, v) {
+        const qi = [-q[0], -q[1], -q[2], q[3]];
+        return qRotate(o, qi, v);
+    }
+    function qToMat3(m, q) { // row-major 9
+        const x = q[0], y = q[1], z = q[2], w = q[3];
+        const x2 = x + x, y2 = y + y, z2 = z + z;
+        const xx = x * x2, xy = x * y2, xz = x * z2, yy = y * y2, yz = y * z2, zz = z * z2, wx = w * x2, wy = w * y2, wz = w * z2;
+        m[0] = 1 - (yy + zz); m[1] = xy - wz; m[2] = xz + wy;
+        m[3] = xy + wz; m[4] = 1 - (xx + zz); m[5] = yz - wx;
+        m[6] = xz - wy; m[7] = yz + wx; m[8] = 1 - (xx + yy);
+        return m;
+    }
+    /* -------------------------------------------------------------- mat3 ops */
+    const m3 = () => new Float64Array(9);
+    function m3MulV(o, m, v) {
+        const x = v[0], y = v[1], z = v[2];
+        return vset(o, m[0] * x + m[1] * y + m[2] * z, m[3] * x + m[4] * y + m[5] * z, m[6] * x + m[7] * y + m[8] * z);
+    }
+    function m3ABAt(o, a, b) { // o = a * b * a^T   (all 3x3 row-major)
+        const t = new Float64Array(9);
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 3; j++)
+                t[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 3; j++)
+                o[i * 3 + j] = t[i * 3] * a[j * 3] + t[i * 3 + 1] * a[j * 3 + 1] + t[i * 3 + 2] * a[j * 3 + 2];
+        return o;
+    }
+    function m3Inv(o, m) {
+        const a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5], g = m[6], h = m[7], i = m[8];
+        const A = e * i - f * h, B = c * h - b * i, C = b * f - c * e;
+        const det = a * A + d * B + g * C;
+        if (Math.abs(det) < 1e-30) return null;
+        const s = 1 / det;
+        o[0] = A * s; o[1] = B * s; o[2] = C * s;
+        o[3] = (f * g - d * i) * s; o[4] = (a * i - c * g) * s; o[5] = (c * d - a * f) * s;
+        o[6] = (d * h - e * g) * s; o[7] = (b * g - a * h) * s; o[8] = (a * e - b * d) * s;
+        return o;
+    }
+
+    /* =====================================================================
+       MASS PROPERTIES of a closed triangle mesh (divergence theorem).
+       verts: Float64Array 3n (already scaled), indices: Uint32Array|null.
+       Returns { volume, com[3], inertia[9] about com (unit density) }.
+       Multiply mass & inertia by density externally.
+       =================================================================== */
+    function massProperties(verts, indices) {
+        let V = 0, Cx = 0, Cy = 0, Cz = 0;
+        let xx = 0, yy = 0, zz = 0, xy = 0, yz = 0, zx = 0;
+        const n = indices ? indices.length : verts.length / 3;
+        for (let t = 0; t < n; t += 3) {
+            const i0 = (indices ? indices[t] : t) * 3,
+                i1 = (indices ? indices[t + 1] : t + 1) * 3,
+                i2 = (indices ? indices[t + 2] : t + 2) * 3;
+            const ax = verts[i0], ay = verts[i0 + 1], az = verts[i0 + 2];
+            const bx = verts[i1], by = verts[i1 + 1], bz = verts[i1 + 2];
+            const cx = verts[i2], cy = verts[i2 + 1], cz = verts[i2 + 2];
+            const d = ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx); // 6V of tet(0,a,b,c)
+            V += d / 6;
+            Cx += d * (ax + bx + cx) / 24; Cy += d * (ay + by + cy) / 24; Cz += d * (az + bz + cz) / 24;
+            // second moments over tet (canonical formulas)
+            xx += d * (ax * ax + bx * bx + cx * cx + ax * bx + ax * cx + bx * cx) / 60;
+            yy += d * (ay * ay + by * by + cy * cy + ay * by + ay * cy + by * cy) / 60;
+            zz += d * (az * az + bz * bz + cz * cz + az * bz + az * cz + bz * cz) / 60;
+            xy += d * (2 * (ax * ay + bx * by + cx * cy) + ax * by + bx * ay + ax * cy + cx * ay + bx * cy + cx * by) / 120;
+            yz += d * (2 * (ay * az + by * bz + cy * cz) + ay * bz + by * az + ay * cz + cy * az + by * cz + cy * bz) / 120;
+            zx += d * (2 * (az * ax + bz * bx + cz * cx) + az * bx + bz * ax + az * cx + cz * ax + bz * cx + cz * bx) / 120;
+        }
+        const sgn = V < 0 ? -1 : 1;
+        V *= sgn; Cx *= sgn; Cy *= sgn; Cz *= sgn;
+        xx *= sgn; yy *= sgn; zz *= sgn; xy *= sgn; yz *= sgn; zx *= sgn;
+        const com = v3();
+        if (V > 1e-12) vset(com, Cx / V, Cy / V, Cz / V);
+        // ---- validity check -------------------------------------------------
+        // The divergence-theorem integrals are only correct for closed meshes
+        // with consistent winding. Open surfaces / mixed winding (merged CAD
+        // shapes, tubes, imported STL) can yield near-zero volume and a COM far
+        // outside the object, which corrupts both dynamics and force display.
+        // Fall back to a homogeneous bounding-box model in that case.
+        const mn = [1e30, 1e30, 1e30], mx = [-1e30, -1e30, -1e30];
+        for (let i = 0; i < verts.length; i += 3)
+            for (let k = 0; k < 3; k++) {
+                if (verts[i + k] < mn[k]) mn[k] = verts[i + k];
+                if (verts[i + k] > mx[k]) mx[k] = verts[i + k];
+            }
+        const dx = Math.max(1e-6, mx[0] - mn[0]), dy = Math.max(1e-6, mx[1] - mn[1]), dz = Math.max(1e-6, mx[2] - mn[2]);
+        const bboxVol = dx * dy * dz;
+        const pad = [dx * .02 + 1e-6, dy * .02 + 1e-6, dz * .02 + 1e-6];
+        const comInside =
+            com[0] >= mn[0] - pad[0] && com[0] <= mx[0] + pad[0] &&
+            com[1] >= mn[1] - pad[1] && com[1] <= mx[1] + pad[1] &&
+            com[2] >= mn[2] - pad[2] && com[2] <= mx[2] + pad[2];
+        if (!(V > bboxVol * 1e-3) || !comInside) {
+            V = bboxVol * .5;
+            vset(com, (mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2);
+            const Ib = Float64Array.from([
+                V * (dy * dy + dz * dz) / 12, 0, 0,
+                0, V * (dx * dx + dz * dz) / 12, 0,
+                0, 0, V * (dx * dx + dy * dy) / 12
+            ]);
+            return { volume: V, com, inertia: Ib, fallback: true };
+        }
+        // inertia about origin (unit density)
+        let Ixx = yy + zz, Iyy = xx + zz, Izz = xx + yy;
+        let Ixy = -xy, Iyz = -yz, Izx = -zx;
+        // shift to COM (parallel axis, unit density -> mass = V)
+        const cxm = com[0], cym = com[1], czm = com[2];
+        Ixx -= V * (cym * cym + czm * czm); Iyy -= V * (cxm * cxm + czm * czm); Izz -= V * (cxm * cxm + cym * cym);
+        Ixy += V * cxm * cym; Iyz += V * cym * czm; Izx += V * czm * cxm;
+        const I = Float64Array.from([Ixx, Ixy, Izx, Ixy, Iyy, Iyz, Izx, Iyz, Izz]);
+        return { volume: V, com, inertia: I };
+    }
+
+    /* =====================================================================
+       BVH over triangles (median split), closest-point queries.
+       tris: Float64Array, 9 per triangle (scaled-local space).
+       =================================================================== */
+    function buildBVH(tris) {
+        const nt = tris.length / 9;
+        const idx = new Uint32Array(nt);
+        const cent = new Float64Array(nt * 3);
+        for (let i = 0; i < nt; i++) {
+            idx[i] = i;
+            for (let k = 0; k < 3; k++)
+                cent[i * 3 + k] = (tris[i * 9 + k] + tris[i * 9 + 3 + k] + tris[i * 9 + 6 + k]) / 3;
+        }
+        const nodes = []; // {min,max,start,count,left,right}
+        function nodeBounds(start, count) {
+            const mn = [1e30, 1e30, 1e30], mx = [-1e30, -1e30, -1e30];
+            for (let i = start; i < start + count; i++) {
+                const t = idx[i] * 9;
+                for (let v = 0; v < 3; v++)
+                    for (let k = 0; k < 3; k++) {
+                        const c = tris[t + v * 3 + k];
+                        if (c < mn[k]) mn[k] = c;
+                        if (c > mx[k]) mx[k] = c;
+                    }
+            }
+            return { mn, mx };
+        }
+        function build(start, count) {
+            const { mn, mx } = nodeBounds(start, count);
+            const ni = nodes.length;
+            nodes.push({ mn, mx, start, count, l: -1, r: -1 });
+            if (count <= 4) return ni;
+            let axis = 0, ext = mx[0] - mn[0];
+            if (mx[1] - mn[1] > ext) { axis = 1; ext = mx[1] - mn[1]; }
+            if (mx[2] - mn[2] > ext) axis = 2;
+            const sub = Array.from(idx.subarray(start, start + count));
+            sub.sort((a, b) => cent[a * 3 + axis] - cent[b * 3 + axis]);
+            for (let i = 0; i < count; i++) idx[start + i] = sub[i];
+            const half = count >> 1;
+            const l = build(start, half), r = build(start + half, count - half);
+            nodes[ni].l = l; nodes[ni].r = r; nodes[ni].count = 0;
+            return ni;
+        }
+        if (nt) build(0, nt);
+        return { nodes, idx, tris };
+    }
+    function aabbDist2(mn, mx, p) {
+        let d = 0;
+        for (let k = 0; k < 3; k++) {
+            const c = p[k] < mn[k] ? mn[k] - p[k] : p[k] > mx[k] ? p[k] - mx[k] : 0;
+            d += c * c;
+        }
+        return d;
+    }
+    // Ericson: closest point on triangle
+    const _cpt = { ab: v3(), ac: v3(), ap: v3(), bp: v3(), cp: v3() };
+    function closestPointTriangle(out, p, a, b, c) {
+        const { ab, ac, ap } = _cpt;
+        vsub(ab, b, a); vsub(ac, c, a); vsub(ap, p, a);
+        const d1 = vdot(ab, ap), d2 = vdot(ac, ap);
+        if (d1 <= 0 && d2 <= 0) return vcopy(out, a);
+        const bp = _cpt.bp; vsub(bp, p, b);
+        const d3 = vdot(ab, bp), d4 = vdot(ac, bp);
+        if (d3 >= 0 && d4 <= d3) return vcopy(out, b);
+        const vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+            const v = d1 / (d1 - d3);
+            return vset(out, a[0] + ab[0] * v, a[1] + ab[1] * v, a[2] + ab[2] * v);
+        }
+        const cp = _cpt.cp; vsub(cp, p, c);
+        const d5 = vdot(ab, cp), d6 = vdot(ac, cp);
+        if (d6 >= 0 && d5 <= d6) return vcopy(out, c);
+        const vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) {
+            const w = d2 / (d2 - d6);
+            return vset(out, a[0] + ac[0] * w, a[1] + ac[1] * w, a[2] + ac[2] * w);
+        }
+        const va = d3 * d6 - d5 * d4;
+        if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
+            const w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            return vset(out, b[0] + (c[0] - b[0]) * w, b[1] + (c[1] - b[1]) * w, b[2] + (c[2] - b[2]) * w);
+        }
+        const den = 1 / (va + vb + vc), v = vb * den, w = vc * den;
+        return vset(out, a[0] + ab[0] * v + ac[0] * w, a[1] + ab[1] * v + ac[1] * w, a[2] + ab[2] * v + ac[2] * w);
+    }
+    // point-in-mesh via ray-crossing parity (BVH-pruned). Direction is an
+    // arbitrary irrational-ish vector to avoid grazing shared edges; duplicate
+    // hits at (nearly) the same distance are collapsed.
+    const _rp = { dir: Float64Array.from([0.9838699100999074, 0.1707949206, 0.0553149999]) };
+    function bvhRayParity(bvh, p) {
+        if (!bvh.nodes.length) return false;
+        const d = _rp.dir, hits = [];
+        const stack = [0];
+        const { nodes, idx, tris } = bvh;
+        while (stack.length) {
+            const nd = nodes[stack.pop()];
+            // slab test
+            let t0 = 0, t1 = 1e30, ok = true;
+            for (let k = 0; k < 3; k++) {
+                const inv = 1 / d[k];
+                let a = (nd.mn[k] - p[k]) * inv, b = (nd.mx[k] - p[k]) * inv;
+                if (a > b) { const t = a; a = b; b = t; }
+                if (a > t0) t0 = a;
+                if (b < t1) t1 = b;
+                if (t0 > t1) { ok = false; break; }
+            }
+            if (!ok) continue;
+            if (nd.l < 0) {
+                for (let i = nd.start; i < nd.start + nd.count; i++) {
+                    const t9 = idx[i] * 9;
+                    const ax = tris[t9], ay = tris[t9 + 1], az = tris[t9 + 2];
+                    const e1x = tris[t9 + 3] - ax, e1y = tris[t9 + 4] - ay, e1z = tris[t9 + 5] - az;
+                    const e2x = tris[t9 + 6] - ax, e2y = tris[t9 + 7] - ay, e2z = tris[t9 + 8] - az;
+                    // Moller-Trumbore
+                    const px = d[1] * e2z - d[2] * e2y, py = d[2] * e2x - d[0] * e2z, pz = d[0] * e2y - d[1] * e2x;
+                    const det = e1x * px + e1y * py + e1z * pz;
+                    if (Math.abs(det) < 1e-14) continue;
+                    const inv = 1 / det;
+                    const tx = p[0] - ax, ty = p[1] - ay, tz = p[2] - az;
+                    const u = (tx * px + ty * py + tz * pz) * inv;
+                    if (u < 0 || u > 1) continue;
+                    const qx = ty * e1z - tz * e1y, qy = tz * e1x - tx * e1z, qz = tx * e1y - ty * e1x;
+                    const v = (d[0] * qx + d[1] * qy + d[2] * qz) * inv;
+                    if (v < 0 || u + v > 1) continue;
+                    const t = (e2x * qx + e2y * qy + e2z * qz) * inv;
+                    if (t > 1e-7 && !hits.some(hh => Math.abs(hh - t) < 1e-5)) hits.push(t);
+                }
+            } else stack.push(nd.l, nd.r);
+        }
+        return hits.length % 2 === 1;
+    }
+    const _bq = { a: v3(), b: v3(), c: v3(), cp: v3(), n: v3(), e1: v3(), e2: v3() };
+    function bvhClosest(bvh, p, maxDist) {
+        if (!bvh.nodes.length) return null;
+        let best = maxDist != null ? maxDist * maxDist : 1e30;
+        let bp = null, bn = null;
+        const stack = [0];
+        const { nodes, idx, tris } = bvh;
+        while (stack.length) {
+            const ni = stack.pop();
+            const nd = nodes[ni];
+            if (aabbDist2(nd.mn, nd.mx, p) >= best) continue;
+            if (nd.l < 0) {
+                for (let i = nd.start; i < nd.start + nd.count; i++) {
+                    const t = idx[i] * 9;
+                    vset(_bq.a, tris[t], tris[t + 1], tris[t + 2]);
+                    vset(_bq.b, tris[t + 3], tris[t + 4], tris[t + 5]);
+                    vset(_bq.c, tris[t + 6], tris[t + 7], tris[t + 8]);
+                    closestPointTriangle(_bq.cp, p, _bq.a, _bq.b, _bq.c);
+                    const d2 = (p[0] - _bq.cp[0]) ** 2 + (p[1] - _bq.cp[1]) ** 2 + (p[2] - _bq.cp[2]) ** 2;
+                    if (d2 < best) {
+                        best = d2;
+                        bp = Float64Array.from(_bq.cp);
+                        vsub(_bq.e1, _bq.b, _bq.a); vsub(_bq.e2, _bq.c, _bq.a);
+                        bn = v3(); vnorm(bn, vcross(bn, _bq.e1, _bq.e2));
+                    }
+                }
+            } else {
+                // visit nearer child first
+                const dl = aabbDist2(nodes[nd.l].mn, nodes[nd.l].mx, p);
+                const dr = aabbDist2(nodes[nd.r].mn, nodes[nd.r].mx, p);
+                if (dl < dr) { stack.push(nd.r, nd.l); } else { stack.push(nd.l, nd.r); }
+            }
+        }
+        return bp ? { point: bp, normal: bn, dist2: best } : null;
+    }
+
+    /* =====================================================================
+       RIGID BODY WORLD  — substepped TGS-style solver:
+       velocity-level sequential impulses (warm started, accumulated clamps,
+       friction cone) + NGS positional correction. Full inertia tensors.
+       =================================================================== */
+    function createBody(opts) {
+        // opts: {verts, indices, density, kind:'sphere'|'mesh', radius, isStatic}
+        const mp = massProperties(opts.verts, opts.indices || null);
+        const density = Math.max(1e-9, opts.density);
+        let mass = mp.volume * density * 1e-9; // kg  (mm^3 * kg/m^3 * 1e-9)
+        if (!(mass > 1e-9)) mass = 1e-6;
+        const I = m3();
+        for (let i = 0; i < 9; i++) I[i] = mp.inertia[i] * density * 1e-9; // kg*mm^2
+        // guard against degenerate inertia
+        const minI = mass * 0.1;
+        I[0] = Math.max(I[0], minI); I[4] = Math.max(I[4], minI); I[8] = Math.max(I[8], minI);
+        const invI = m3Inv(m3(), I) || m3();
+        // contact vertex cloud (dedupe + cap)
+        const cloud = buildVertexCloud(opts.verts, opts.indices, 320);
+        // local AABB
+        const mn = [1e30, 1e30, 1e30], mx = [-1e30, -1e30, -1e30];
+        for (let i = 0; i < opts.verts.length; i += 3)
+            for (let k = 0; k < 3; k++) {
+                if (opts.verts[i + k] < mn[k]) mn[k] = opts.verts[i + k];
+                if (opts.verts[i + k] > mx[k]) mx[k] = opts.verts[i + k];
+            }
+        // triangle soup for BVH
+        let tris = null;
+        const nIdx = opts.indices ? opts.indices.length : opts.verts.length / 3;
+        tris = new Float64Array(nIdx * 3);
+        for (let t = 0; t < nIdx; t++) {
+            const vi = (opts.indices ? opts.indices[t] : t) * 3;
+            tris[t * 3] = opts.verts[vi]; tris[t * 3 + 1] = opts.verts[vi + 1]; tris[t * 3 + 2] = opts.verts[vi + 2];
+        }
+        const bvh = opts.kind === "sphere" ? null : buildBVH(tris);
+        const obbVol = Math.max(1e-9, (mx[0] - mn[0]) * (mx[1] - mn[1]) * (mx[2] - mn[2]));
+        const body = {
+            kind: opts.kind || "mesh",
+            srcVerts: opts.verts,                    // full scaled-local vertices
+            boxiness: Math.min(1, mp.volume / obbVol), // 1=box-like, ~0.52=sphere-like
+            radius: opts.radius || Math.max(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2,
+            isStatic: !!opts.isStatic,
+            mass, invMass: opts.isStatic ? 0 : 1 / mass,
+            Ilocal: I, invIlocal: invI,
+            invIworld: m3(),
+            comLocal: mp.com,     // COM in scaled-local space
+            volume: mp.volume,
+            x: v3(),              // world COM position
+            q: qIdent(),
+            v: v3(), w: v3(),
+            cloud, localAABB: { mn, mx }, bvh,
+            friction: opts.friction ?? .4,
+            restitution: opts.restitution ?? .3,
+            convex: opts.convex !== false,
+            buoyancy: 1, dragScale: 1,
+            sleepTime: 0, sleeping: false,
+            R: m3(),
+            id: opts.id ?? 0,
+            boundR: 0
+        };
+        // bounding radius about COM
+        let br = 0;
+        for (let i = 0; i < cloud.length; i += 3) {
+            const dx = cloud[i] - mp.com[0], dy = cloud[i + 1] - mp.com[1], dz = cloud[i + 2] - mp.com[2];
+            br = Math.max(br, dx * dx + dy * dy + dz * dz);
+        }
+        body.boundR = Math.sqrt(br) + 1e-3;
+        // SAT data for low-poly convex primitives (box, wedge, prism, pyramid):
+        // unique face normals + unique edge directions in scaled-local space
+        if (body.convex) {
+            const nrm = [], edg = [];
+            const addDir = (arr, d) => {
+                const l = Math.hypot(d[0], d[1], d[2]);
+                if (l < 1e-9) return;
+                let x = d[0] / l, y = d[1] / l, z = d[2] / l;
+                // canonical hemisphere
+                if (x < 0 || (x === 0 && (y < 0 || (y === 0 && z < 0)))) { x = -x; y = -y; z = -z; }
+                for (const e of arr)
+                    if (Math.abs(e[0] * x + e[1] * y + e[2] * z) > .9999) return;
+                arr.push([x, y, z]);
+            };
+            const nIdx2 = opts.indices ? opts.indices.length : opts.verts.length / 3;
+            for (let t = 0; t < nIdx2 && nrm.length <= 20 && edg.length <= 24; t += 3) {
+                const i0 = (opts.indices ? opts.indices[t] : t) * 3;
+                const i1 = (opts.indices ? opts.indices[t + 1] : t + 1) * 3;
+                const i2 = (opts.indices ? opts.indices[t + 2] : t + 2) * 3;
+                const e1 = [opts.verts[i1] - opts.verts[i0], opts.verts[i1 + 1] - opts.verts[i0 + 1], opts.verts[i1 + 2] - opts.verts[i0 + 2]];
+                const e2 = [opts.verts[i2] - opts.verts[i0], opts.verts[i2 + 1] - opts.verts[i0 + 1], opts.verts[i2 + 2] - opts.verts[i0 + 2]];
+                addDir(nrm, [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]]);
+                addDir(edg, e1); addDir(edg, e2);
+                addDir(edg, [e2[0] - e1[0], e2[1] - e1[1], e2[2] - e1[2]]);
+            }
+            if (nrm.length <= 20 && edg.length <= 24)
+                body.satData = { faceDirs: nrm, edgeDirs: edg };
+        }
+        // Auto-detect sphere-like meshes (boolean results, imports, uniformly
+        // scaled balls) and give them the analytic sphere collider. Mesh-vs-mesh
+        // vertex contacts at sharp convex edges can otherwise form a penetration
+        // "pocket" (a convex ridge acts like a V-groove) that traps round bodies.
+        if (body.kind !== "sphere" && cloud.length >= 30) {
+            let mn2 = 1e30, mx2 = 0, sum = 0, n2 = 0;
+            for (let i = 0; i < cloud.length; i += 3) {
+                const dx = cloud[i] - mp.com[0], dy = cloud[i + 1] - mp.com[1], dz = cloud[i + 2] - mp.com[2];
+                const r2 = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                mn2 = Math.min(mn2, r2); mx2 = Math.max(mx2, r2); sum += r2; n2++;
+            }
+            const mean = sum / n2;
+            if (mean > 1e-6 && (mx2 - mn2) / mean < .08) {
+                body.kind = "sphere";
+                body.radius = mean;
+            }
+        }
+        updateBodyFrame(body);
+        return body;
+    }
+    function buildVertexCloud(verts, indices, cap) {
+        const map = new Map();
+        for (let i = 0; i < verts.length; i += 3) {
+            const key = ((verts[i] * 20) | 0) + ":" + ((verts[i + 1] * 20) | 0) + ":" + ((verts[i + 2] * 20) | 0);
+            if (!map.has(key)) map.set(key, i);
+        }
+        let keys = [...map.values()];
+        // always keep support (extreme) vertices in 26 directions so contact
+        // sampling never loses the outermost points of round shapes
+        const mustKeep = new Set();
+        for (let dx = -1; dx <= 1; dx++)
+            for (let dy = -1; dy <= 1; dy++)
+                for (let dz = -1; dz <= 1; dz++) {
+                    if (!dx && !dy && !dz) continue;
+                    let best = -1e30, bi = -1;
+                    for (const vi of keys) {
+                        const d = verts[vi] * dx + verts[vi + 1] * dy + verts[vi + 2] * dz;
+                        if (d > best) { best = d; bi = vi; }
+                    }
+                    if (bi >= 0) mustKeep.add(bi);
+                }
+        if (keys.length > cap) {
+            const stride = keys.length / cap;
+            const out = new Set(mustKeep);
+            for (let i = 0; i < cap; i++) out.add(keys[Math.floor(i * stride)]);
+            keys = [...out];
+        }
+        const cloud = new Float64Array(keys.length * 3);
+        keys.forEach((vi, i) => { cloud[i * 3] = verts[vi]; cloud[i * 3 + 1] = verts[vi + 1]; cloud[i * 3 + 2] = verts[vi + 2]; });
+        return cloud;
+    }
+    function updateBodyFrame(b) {
+        qToMat3(b.R, b.q);
+        m3ABAt(b.invIworld, b.R, b.invIlocal);
+    }
+    // world point of scaled-local point p
+    function bodyLocalToWorld(out, b, p) {
+        const d = v3(); vsub(d, p, b.comLocal);
+        m3MulV(out, b.R, d);
+        return vadd(out, out, b.x);
+    }
+    function bodyWorldToLocal(out, b, p) {
+        const d = v3(); vsub(d, p, b.x);
+        // R^T * d
+        vset(out,
+            b.R[0] * d[0] + b.R[3] * d[1] + b.R[6] * d[2],
+            b.R[1] * d[0] + b.R[4] * d[1] + b.R[7] * d[2],
+            b.R[2] * d[0] + b.R[5] * d[1] + b.R[8] * d[2]);
+        return vadd(out, out, b.comLocal);
+    }
+    function velocityAt(out, b, p) {
+        const r = v3(); vsub(r, p, b.x);
+        vcross(out, b.w, r);
+        return vadd(out, out, b.v);
+    }
+
+    /* --------------------------------------------- contact generation ------ */
+    const CONTACT_SLOP = 0.2;    // mm
+    const CONTACT_MARGIN = 0.6;  // mm — generate speculative contacts within this
+    function worldAABB(b) {
+        // conservative: bounding sphere about COM
+        return {
+            mn: [b.x[0] - b.boundR, b.x[1] - b.boundR, b.x[2] - b.boundR],
+            mx: [b.x[0] + b.boundR, b.x[1] + b.boundR, b.x[2] + b.boundR]
+        };
+    }
+    function aabbOverlap(a, b, m) {
+        return a.mn[0] <= b.mx[0] + m && a.mx[0] >= b.mn[0] - m &&
+            a.mn[1] <= b.mx[1] + m && a.mx[1] >= b.mn[1] - m &&
+            a.mn[2] <= b.mx[2] + m && a.mx[2] >= b.mn[2] - m;
+    }
+    function groundContacts(b, out, margin = CONTACT_MARGIN) {
+        // vertices below y = margin
+        if (b.x[1] - b.boundR > margin) return;
+        const p = v3();
+        const cand = [];
+        if (b.kind === "sphere") {
+            const y = b.x[1] - b.radius;
+            if (y < margin)
+                cand.push({ p: [b.x[0], Math.min(y, 0), b.x[2]], depth: -y });
+        } else {
+            // full vertex list — the capped cloud may miss the true lowest
+            // vertex of dense round meshes, leaving the body visibly hovering
+            const src = b.srcVerts || b.cloud;
+            for (let i = 0; i < src.length; i += 3) {
+                vset(p, src[i], src[i + 1], src[i + 2]);
+                const wp = bodyLocalToWorld(v3(), b, p);
+                if (wp[1] < margin)
+                    cand.push({ p: wp, depth: -wp[1] });
+            }
+        }
+        if (!cand.length) return;
+        sortCand(cand);
+        const keep = reduceManifold(cand, 4, Math.max(b.boundR * .05, .5));
+        for (const c of keep)
+            out.push(makeContact(b, null, [0, 1, 0], c.p, c.depth));
+    }
+    // deterministic ordering: depth quantized to 0.1mm, ties broken by position —
+    // raw depth-sorting makes the kept point set flip between steps (torque noise)
+    function sortCand(cand) {
+        cand.sort((a, b) =>
+            (Math.round(b.depth * 10) - Math.round(a.depth * 10)) ||
+            (a.p[0] - b.p[0]) || (a.p[2] - b.p[2]) || (a.p[1] - b.p[1]));
+    }
+    // keep up to n well-separated points, deepest first
+    function reduceManifold(cand, n, minSep) {
+        const keep = [];
+        const s2 = minSep * minSep;
+        for (const c of cand) {
+            let ok = true;
+            for (const k of keep) {
+                const dx = c.p[0] - k.p[0], dy = c.p[1] - k.p[1], dz = c.p[2] - k.p[2];
+                if (dx * dx + dy * dy + dz * dz < s2) { ok = false; break; }
+            }
+            if (ok) { keep.push(c); if (keep.length >= n) break; }
+        }
+        return keep;
+    }
+    function makeContact(a, b, n, p, depth) {
+        return {
+            a, b,
+            n: Float64Array.from(n),      // world normal, pushes A along +n
+            p: Float64Array.from(p),      // world point
+            depth,
+            lN: 0, lT1: 0, lT2: 0,
+            t1: v3(), t2: v3(),
+            bias: 0, mN: 0, mT1: 0, mT2: 0,
+            rA: v3(), rB: v3(),
+            key: ""
+        };
+    }
+    function sphereSphere(a, b, out, margin = CONTACT_MARGIN) {
+        const d = v3(); vsub(d, a.x, b.x);
+        const dist = vlen(d);
+        const pen = a.radius + b.radius - dist;
+        if (pen < -margin) return;
+        const n = dist > 1e-9 ? vscale(v3(), d, 1 / dist) : vset(v3(), 0, 1, 0);
+        const p = v3(); vcopy(p, b.x); vaddScaled(p, n, b.radius - pen / 2);
+        out.push(makeContact(a, b, n, p, pen));
+    }
+    function sphereMesh(s, m, out, margin = CONTACT_MARGIN) {
+        const lc = bodyWorldToLocal(v3(), m, s.x);
+        const hit = bvhClosest(m.bvh, lc, s.radius + margin);
+        if (!hit) return;
+        const wp = bodyLocalToWorld(v3(), m, hit.point);
+        const d = v3(); vsub(d, s.x, wp);
+        let dist = vlen(d);
+        let n;
+        if (dist > 1e-6) n = vscale(v3(), d, 1 / dist);
+        else { n = m3MulV(v3(), m.R, hit.normal); dist = 0; }
+        // Center-inside detection. The naive test dot(d, faceNormal)<0 is WRONG
+        // near edges/corners (closest point on an edge returns one face's
+        // normal): a ball wedged at a slope base was flagged "inside", got a
+        // ~radius-sized fake depth and a flipping normal → violent limit cycle.
+        // Confirm with an exact ray-parity query before flipping.
+        const nl = m3MulV(v3(), m.R, hit.normal);
+        if (vdot(d, nl) < 0 && dist > 1e-6 && bvhRayParity(m.bvh, lc)) {
+            // center inside: exit through nearest surface — but only if that
+            // direction also separates the two bodies (thin-feature guard)
+            const dSM = vsub(v3(), s.x, m.x);
+            vnorm(dSM, dSM);
+            const exit = vscale(v3(), n, -1);
+            if (vdot(exit, dSM) > -.25) {
+                vcopy(n, exit);
+                dist = -dist;
+            }
+        }
+        let pen = s.radius - dist;
+        if (pen < -margin) return;
+        pen = Math.min(pen, s.radius); // never report more than one radius deep
+        out.push(makeContact(s, m, n, wp, pen));
+    }
+    function meshMesh(a, b, out, margin = CONTACT_MARGIN, world = null) {
+        if (a.convex && b.convex && a.satData && b.satData) {
+            const before = out.length;
+            convexSAT(a, b, out, margin, world);
+            if (globalThis.__satDbg) console.log(`   SAT ${a.id}-${b.id} margin=${margin.toFixed(1)} contacts=${out.length - before}` + (out.length > before ? ` n=(${out[before].n[0].toFixed(2)},${out[before].n[1].toFixed(2)},${out[before].n[2].toFixed(2)}) d=${out[before].depth.toFixed(1)}` : ""));
+            return;
+        }
+        if (a.convex && b.convex && a.boxiness > .72 && b.boxiness > .72) { convexConvex(a, b, out, margin); return; }
+        // fallback: vertex-vs-surface both directions (non-convex meshes)
+        const cand = [];
+        collectVertexContacts(a, b, cand, +1, margin);
+        collectVertexContacts(b, a, cand, -1, margin);
+        if (!cand.length) return;
+        // reject contacts whose normal does not separate the pair (thin-feature
+        // exit directions can point out the far side and clamp bodies together)
+        const dAB = vsub(v3(), a.x, b.x);
+        vnorm(dAB, dAB);
+        const filtered = cand.filter(c => c.depth <= CONTACT_SLOP || vdot(c.n, dAB) > -.25);
+        if (!filtered.length) return;
+        sortCand(filtered);
+        // STRUCTURAL rule: one pair = one contact direction. All contacts must
+        // agree (dot > .7) with the deepest contact's normal. Multi-directional
+        // manifolds only arise from penetration into sharp convex features and
+        // form artificial pockets that trap bodies (convex ridge → fake V-groove).
+        const ref = filtered[0].n;
+        const coherent = filtered.filter(c => vdot(c.n, ref) > .7);
+        const sep = Math.max(Math.min(a.boundR, b.boundR) * .12, .6);
+        const keep = reduceManifold(coherent, 4, sep);
+        for (const c of keep)
+            out.push(makeContact(a, b, c.n, c.p, c.depth));
+    }
+    /* OBB of a body in world space */
+    function obbOf(b) {
+        const mn = b.localAABB.mn, mx = b.localAABB.mx;
+        const cLocal = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
+        const center = bodyLocalToWorld(v3(), b, cLocal);
+        const axes = [
+            [b.R[0], b.R[3], b.R[6]],
+            [b.R[1], b.R[4], b.R[7]],
+            [b.R[2], b.R[5], b.R[8]]
+        ];
+        const half = [(mx[0] - mn[0]) / 2, (mx[1] - mn[1]) / 2, (mx[2] - mn[2]) / 2];
+        return { center, axes, half };
+    }
+    const projR = (o, ax) => Math.abs(vdot(ax, o.axes[0])) * o.half[0] + Math.abs(vdot(ax, o.axes[1])) * o.half[1] + Math.abs(vdot(ax, o.axes[2])) * o.half[2];
+    function pointInOBB(p, o, expand) {
+        const d = vsub(v3(), p, o.center);
+        for (let i = 0; i < 3; i++)
+            if (Math.abs(vdot(d, o.axes[i])) > o.half[i] + expand) return false;
+        return true;
+    }
+    /* exact convex-polyhedron SAT: minimum translation over TRUE face normals
+       and edge-cross axes. Fixes the fatal weakness of nearest-exit vertex
+       contacts: shallow-but-wide overlaps at ground level "exited" through the
+       bottom face (blocked by the ground) and bodies slid through each other. */
+    function supportInterval(body, axis) {
+        // world axis → project the vertex cloud
+        let mn = 1e30, mx = -1e30;
+        const wp = v3(), lp = v3();
+        for (let i = 0; i < body.cloud.length; i += 3) {
+            vset(lp, body.cloud[i], body.cloud[i + 1], body.cloud[i + 2]);
+            bodyLocalToWorld(wp, body, lp);
+            const d = vdot(wp, axis);
+            if (d < mn) mn = d;
+            if (d > mx) mx = d;
+        }
+        return [mn, mx];
+    }
+    function convexSAT(a, b, out, margin = CONTACT_MARGIN, world = null) {
+        const faceAxes = [], edgeAxes = [];
+        for (const f of a.satData.faceDirs) faceAxes.push(vnorm(v3(), m3MulV(v3(), a.R, f)));
+        for (const f of b.satData.faceDirs) faceAxes.push(vnorm(v3(), m3MulV(v3(), b.R, f)));
+        for (const ea of a.satData.edgeDirs) {
+            const wa = m3MulV(v3(), a.R, ea);
+            for (const eb of b.satData.edgeDirs) {
+                const wb = m3MulV(v3(), b.R, eb);
+                const cx = vcross(v3(), wa, wb);
+                if (vlen2(cx) > 1e-6) edgeAxes.push(vnorm(cx, cx));
+            }
+        }
+        const evalAxis = (ax) => {
+            const [aMin, aMax] = supportInterval(a, ax);
+            const [bMin, bMax] = supportInterval(b, ax);
+            return {
+                o: Math.min(aMax, bMax) - Math.max(aMin, bMin),
+                sign: (aMin + aMax) / 2 >= (bMin + bMax) / 2 ? 1 : -1
+            };
+        };
+        // face normals first — they define stable resting configurations
+        let pen = 1e30, n = null;
+        for (const ax of faceAxes) {
+            const r = evalAxis(ax);
+            if (r.o < -margin) return; // separated
+            if (r.o < pen) { pen = r.o; n = vscale(v3(), ax, r.sign); }
+        }
+        // edge-cross axes only if CLEARLY better than the best face axis —
+        // otherwise ties flip the normal between frames (z-drift, tunneling)
+        for (const ax of edgeAxes) {
+            const r = evalAxis(ax);
+            if (r.o < -margin) return; // separated
+            if (r.o < pen - .8) { pen = r.o; n = vscale(v3(), ax, r.sign); }
+        }
+        if (!n) return;
+        // axis hysteresis: keep last frame's contact axis unless meaningfully worse
+        if (world) {
+            if (!world.satAxis) world.satAxis = new Map();
+            const key = a.id + ":" + b.id;
+            const prev = world.satAxis.get(key);
+            if (prev) {
+                const pv = vnorm(v3(), prev);
+                const r = evalAxis(pv);
+                if (r.o >= -margin && r.o < pen + 1.2) {
+                    pen = r.o;
+                    n = vscale(v3(), pv, r.sign);
+                }
+            }
+            world.satAxis.set(key, Float64Array.from(n));
+        }
+        // manifold: support-band points from both bodies along ±n
+        let maxB = -1e30, minA = 1e30;
+        const wp = v3(), lp = v3();
+        const aPts = [], bPts = [];
+        for (let i = 0; i < a.cloud.length; i += 3) {
+            vset(lp, a.cloud[i], a.cloud[i + 1], a.cloud[i + 2]);
+            bodyLocalToWorld(wp, a, lp);
+            const sv = vdot(wp, n);
+            if (sv < minA) minA = sv;
+            aPts.push([wp[0], wp[1], wp[2], sv]);
+        }
+        for (let i = 0; i < b.cloud.length; i += 3) {
+            vset(lp, b.cloud[i], b.cloud[i + 1], b.cloud[i + 2]);
+            bodyLocalToWorld(wp, b, lp);
+            const sv = vdot(wp, n);
+            if (sv > maxB) maxB = sv;
+            bPts.push([wp[0], wp[1], wp[2], sv]);
+        }
+        const band = Math.max(.25, Math.min(a.boundR, b.boundR) * .06);
+        const lateralOK = (p, other) => {
+            // stay near the other body laterally: within its support box + band
+            const d = [p[0] - other.x[0], p[1] - other.x[1], p[2] - other.x[2]];
+            return d[0] * d[0] + d[1] * d[1] + d[2] * d[2] <= (other.boundR + band) ** 2;
+        };
+        const cand = [];
+        for (const p of aPts) {
+            const depth = maxB - p[3];
+            if (depth < -margin || p[3] > minA + band) continue;
+            if (!lateralOK(p, b)) continue;
+            cand.push({ p: [p[0], p[1], p[2]], depth });
+        }
+        for (const p of bPts) {
+            const depth = p[3] - minA;
+            if (depth < -margin || p[3] < maxB - band) continue;
+            if (!lateralOK(p, a)) continue;
+            cand.push({ p: [p[0], p[1], p[2]], depth });
+        }
+        if (!cand.length) {
+            const mid = vadd(v3(), a.x, b.x);
+            vscale(mid, mid, .5);
+            out.push(makeContact(a, b, n, mid, pen));
+            return;
+        }
+        sortCand(cand);
+        const sep = Math.max(Math.min(a.boundR, b.boundR) * .18, 1);
+        for (const c of reduceManifold(cand, 4, sep))
+            out.push(makeContact(a, b, n, c.p, Math.min(c.depth, pen)));
+    }
+    /* SAT normal + vertex-cloud support manifold — robust face/edge stacking
+       for convex CAD primitives (boxes, cylinders, cones, prisms, ...). */
+    function convexConvex(a, b, out, margin = CONTACT_MARGIN) {
+        const A = obbOf(a), B = obbOf(b);
+        const d = vsub(v3(), A.center, B.center);
+        const axes = [...A.axes, ...B.axes];
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 3; j++) {
+                const ax = vcross(v3(), A.axes[i], B.axes[j]);
+                if (vlen2(ax) > 1e-8) axes.push(vnorm(ax, ax));
+            }
+        let pen = 1e30, n = null;
+        for (const ax of axes) {
+            const dist = vdot(d, ax);
+            const o = projR(A, ax) + projR(B, ax) - Math.abs(dist);
+            if (o < -margin) return; // separated
+            if (o < pen) {
+                pen = o;
+                n = vscale(v3(), ax, dist >= 0 ? 1 : -1); // pushes A away from B
+            }
+        }
+        if (!n) return;
+        // supports: B's face toward A is at max dot(q,n); A's face toward B at min dot(p,n)
+        let maxB = -1e30, minA = 1e30;
+        const wp = v3(), lp = v3();
+        const aPts = [], bPts = [];
+        for (let i = 0; i < a.cloud.length; i += 3) {
+            vset(lp, a.cloud[i], a.cloud[i + 1], a.cloud[i + 2]);
+            bodyLocalToWorld(wp, a, lp);
+            const s = vdot(wp, n);
+            if (s < minA) minA = s;
+            aPts.push([wp[0], wp[1], wp[2], s]);
+        }
+        for (let i = 0; i < b.cloud.length; i += 3) {
+            vset(lp, b.cloud[i], b.cloud[i + 1], b.cloud[i + 2]);
+            bodyLocalToWorld(wp, b, lp);
+            const s = vdot(wp, n);
+            if (s > maxB) maxB = s;
+            bPts.push([wp[0], wp[1], wp[2], s]);
+        }
+        const band = Math.max(.25, Math.min(a.boundR, b.boundR) * .06);
+        const cand = [];
+        for (const p of aPts) {
+            const depth = maxB - p[3];
+            if (depth < -margin || p[3] > minA + band) continue;
+            if (!pointInOBB(p, B, band)) continue;
+            cand.push({ p: [p[0], p[1], p[2]], depth });
+        }
+        for (const p of bPts) {
+            const depth = p[3] - minA;
+            if (depth < -margin || p[3] < maxB - band) continue;
+            if (!pointInOBB(p, A, band)) continue;
+            cand.push({ p: [p[0], p[1], p[2]], depth });
+        }
+        if (!cand.length) {
+            // deep or edge-edge: single mid point
+            const mid = vadd(v3(), A.center, B.center);
+            vscale(mid, mid, .5);
+            out.push(makeContact(a, b, n, mid, pen));
+            return;
+        }
+        sortCand(cand);
+        const sep = Math.max(Math.min(a.boundR, b.boundR) * .18, 1);
+        for (const c of reduceManifold(cand, 4, sep))
+            out.push(makeContact(a, b, n, c.p, c.depth));
+    }
+    function collectVertexContacts(va, sb, cand, sign, margin = CONTACT_MARGIN) {
+        // Vertices of va tested against the surface of sb.
+        // Signed distance is resolved EXACTLY: "inside" is confirmed with a
+        // ray-parity query instead of trusting the nearest face normal, which
+        // is unreliable at edges/corners (this froze round meshes on wedges).
+        const lp = v3(), wp = v3();
+        const maxD = margin;
+        const bb = worldAABB(sb);
+        const maxDepth = Math.min(va.boundR, sb.boundR) * .5;
+        for (let i = 0; i < va.cloud.length; i += 3) {
+            vset(lp, va.cloud[i], va.cloud[i + 1], va.cloud[i + 2]);
+            bodyLocalToWorld(wp, va, lp);
+            if (wp[0] < bb.mn[0] - maxD || wp[0] > bb.mx[0] + maxD ||
+                wp[1] < bb.mn[1] - maxD || wp[1] > bb.mx[1] + maxD ||
+                wp[2] < bb.mn[2] - maxD || wp[2] > bb.mx[2] + maxD) continue;
+            const lb = bodyWorldToLocal(v3(), sb, wp);
+            const hit = bvhClosest(sb.bvh, lb, Math.max(sb.boundR * .35, 4, margin + 2));
+            if (!hit) continue;
+            const dvl = v3(); vsub(dvl, lb, hit.point);
+            const dist = vlen(dvl);
+            const cpw = bodyLocalToWorld(v3(), sb, hit.point);
+            let nLocal, depth;
+            if (dist > 1e-6) {
+                const suspicious = vdot(dvl, hit.normal) < 0;
+                const inside = suspicious ? bvhRayParity(sb.bvh, lb) : false;
+                if (!inside) {
+                    if (dist > maxD) continue;         // genuine gap
+                    nLocal = vscale(v3(), dvl, 1 / dist); // outward from surface
+                    depth = -dist;                        // speculative
+                } else {
+                    nLocal = vscale(v3(), dvl, -1 / dist); // exit direction v→cp
+                    depth = Math.min(dist, maxDepth);      // deep → clamp, never drop
+                }
+            } else {
+                nLocal = Float64Array.from(hit.normal);
+                depth = 0;
+            }
+            const nw = m3MulV(v3(), sb.R, nLocal);
+            // normal must push the *first* body of the pair (A) apart
+            const n = vscale(v3(), nw, sign);
+            cand.push({ p: Float64Array.from(cpw), n, depth });
+        }
+    }
+
+    /* ------------------------------------------------------- the solver ---- */
+    function computeTangents(c) {
+        const n = c.n;
+        const t1 = c.t1, t2 = c.t2;
+        if (Math.abs(n[0]) > .57) vset(t1, n[1], -n[0], 0);
+        else vset(t1, 0, n[2], -n[1]);
+        vnorm(t1, t1);
+        vcross(t2, n, t1);
+    }
+    // sleeping bodies participate as static (infinite mass) so their zeroed
+    // velocities are never polluted by solver impulses
+    const dynMass = b => (!b || b.isStatic || b.sleeping) ? 0 : b.invMass;
+    function effMass(c, dir) {
+        const a = c.a, b = c.b;
+        let k = dynMass(a) + dynMass(b);
+        if (dynMass(a)) {
+            const rxn = vcross(v3(), c.rA, dir);
+            const tmp = m3MulV(v3(), a.invIworld, rxn);
+            k += vdot(rxn, tmp);
+        }
+        if (b && dynMass(b)) {
+            const rxb = vcross(v3(), c.rB, dir);
+            const tb = m3MulV(v3(), b.invIworld, rxb);
+            k += vdot(rxb, tb);
+        }
+        return k > 1e-12 ? 1 / k : 0;
+    }
+    function applyImpulse(c, dir, lambda) {
+        const a = c.a, b = c.b;
+        const imp = vscale(v3(), dir, lambda);
+        if (dynMass(a)) {
+            vaddScaled(a.v, imp, a.invMass);
+            const la = vcross(v3(), c.rA, imp);
+            vaddScaled(a.w, m3MulV(v3(), a.invIworld, la), 1);
+        }
+        if (b && dynMass(b)) {
+            vaddScaled(b.v, imp, -b.invMass);
+            const lb = vcross(v3(), c.rB, imp);
+            vaddScaled(b.w, m3MulV(v3(), b.invIworld, lb), -1);
+        }
+    }
+    function relVelN(c) {
+        const va = velocityAt(v3(), c.a, c.p);
+        if (c.b) {
+            const vb = velocityAt(v3(), c.b, c.p);
+            vsub(va, va, vb);
+        }
+        return va;
+    }
+
+    function createWorld() {
+        return {
+            bodies: [],
+            gravity: 9806.65,       // mm/s^2
+            drag: .035, angDrag: .32,
+            restitutionThreshold: 40, // mm/s
+            velIters: 16, posIters: 4,
+            rollingResistance: .008,  // Coulomb-style: dv = murr * g * dt for grounded bodies
+            warmCache: new Map(),
+            contactEvents: [],       // filled each step for visualization
+            sleepLinTol: 4,          // mm/s
+            sleepAngTol: .12,        // rad/s
+            sleepDelay: .45
+        };
+    }
+
+    function detectContacts(world, dt = 1 / 240) {
+        const contacts = [];
+        const bodies = world.bodies;
+        for (const b of bodies) if (!b.isStatic) groundContacts(b, contacts, CONTACT_MARGIN + vlen(b.v) * dt);
+        for (let i = 0; i < bodies.length; i++)
+            for (let j = i + 1; j < bodies.length; j++) {
+                const a = bodies[i], b = bodies[j];
+                if (a.isStatic && b.isStatic) continue;
+                if (a.sleeping && b.sleeping) continue;
+                // speculative margin grows with closing speed: fast bodies must
+                // generate contacts BEFORE overlapping (continuous collision)
+                const margin = CONTACT_MARGIN + (vlen(a.v) + vlen(b.v)) * dt;
+                const da = v3(); vsub(da, a.x, b.x);
+                if (vlen(da) > a.boundR + b.boundR + margin) continue;
+                const sa = a.kind === "sphere", sb = b.kind === "sphere";
+                if (sa && sb) sphereSphere(a, b, contacts, margin);
+                else if (sa) sphereMesh(a, b, contacts, margin);
+                else if (sb) {
+                    const tmp = [];
+                    sphereMesh(b, a, tmp, margin);
+                    for (const c of tmp) { // swap roles so a stays first
+                        const swapped = makeContact(a, b, vscale(v3(), c.n, -1), c.p, c.depth);
+                        contacts.push(swapped);
+                    }
+                } else meshMesh(a, b, contacts, margin, world);
+            }
+        return contacts;
+    }
+
+    function keOf(bodies) {
+        let ke = 0;
+        for (const b of bodies) {
+            if (b.isStatic || b.sleeping) continue;
+            ke += .5 * b.mass * vlen2(b.v);
+            const Iw = m3Inv(m3(), b.invIworld);
+            if (Iw) { const t = m3MulV(v3(), Iw, b.w); ke += .5 * vdot(b.w, t); }
+        }
+        return ke;
+    }
+    function stepWorld(world, dt) {
+        const bodies = world.bodies;
+        world.contactEvents.length = 0;
+        // 1. integrate velocities (external forces)
+        for (const b of bodies) {
+            if (b.isStatic || b.sleeping) continue;
+            b.v[1] -= world.gravity * b.buoyancy * dt;
+            const d = Math.exp(-world.drag * b.dragScale * dt);
+            vscale(b.v, b.v, d);
+            vscale(b.w, b.w, Math.exp(-world.angDrag * b.dragScale * dt));
+            const sp = vlen(b.v);
+            if (sp > 2e4) vscale(b.v, b.v, 2e4 / sp); // anti-tunneling ceiling
+        }
+        // 2. contacts at current pose
+        const contacts = detectContacts(world, dt);
+        const newCache = new Map();
+        // ---- pass 0: wake bodies hit by fast/deep contacts FIRST, so their
+        // effective masses below are computed as dynamic (not infinite) already
+        // in the impact substep.
+        // wake trigger = real approach speed along the contact normal.
+        // (A raw |v| test fires permanently: gravity alone adds g*dt≈40mm/s to
+        // every awake body each substep, which kept waking sleeping neighbours.)
+        const wakeVn = Math.max(60, 2.5 * world.gravity * dt);
+        for (const c of contacts) {
+            if (c.a.sleeping || (c.b && c.b.sleeping)) {
+                const rv = relVelN(c);
+                const vn = vdot(rv, c.n); // negative = approaching
+                if (vn < -wakeVn || c.depth > CONTACT_SLOP * 4) {
+                    if (world.debugWake) console.log(`   WAKE ${c.a.id}-${c.b?c.b.id:"G"} depth=${c.depth.toFixed(3)} vn=${vn.toFixed(1)}`);
+                    wake(c.a); if (c.b) wake(c.b);
+                }
+            }
+        }
+        // ---- pass 1: geometry, effective masses, restitution bias.
+        // MUST be finished for every contact before any warm-start impulse is
+        // applied, otherwise later contacts compute their restitution bias from
+        // velocities already polluted by earlier warm impulses (energy pump).
+        for (const c of contacts) {
+            vsub(c.rA, c.p, c.a.x);
+            if (c.b) vsub(c.rB, c.p, c.b.x);
+            computeTangents(c);
+            c.mN = effMass(c, c.n);
+            c.mT1 = effMass(c, c.t1);
+            c.mT2 = effMass(c, c.t2);
+            const rv = relVelN(c);
+            const vn = vdot(rv, c.n) + world.gravity * dt * Math.abs(c.n[1]);
+            const e = c.b ? Math.min(c.a.restitution, c.b.restitution) :
+                Math.min(c.a.restitution, world.groundRestitutionCap ?? 1);
+            const rThresh = Math.max(world.restitutionThreshold, 2.5 * world.gravity * dt);
+            c.bias = vn < -rThresh ? -e * vn : 0;
+            // speculative contact: if there is still a gap (depth<0), allow the
+            // bodies to approach at exactly gap-closing speed instead of freezing
+            // them apart (prevents hovering + warm-start energy pumping)
+            // speculative contacts: while a gap remains, allow approach at
+            // exactly gap-closing speed (lands on the surface, no tunneling).
+            // If the surface will be reached within THIS step and restitution
+            // triggers, bounce immediately with the FULL impact speed — the
+            // landing clamp would otherwise silently discard the overshoot
+            // momentum (≈17% energy loss per bounce at 240 Hz).
+            if (c.depth >= -CONTACT_SLOP) c.target = c.bias;
+            else if (c.bias > 0 && c.depth > vn * dt) c.target = c.bias;
+            else c.target = c.depth / dt;
+            c._laA = bodyWorldToLocal(v3(), c.a, c.p);
+            c.key = c.a.id + ":" + (c.b ? c.b.id : "G");
+        }
+        // ---- pass 2: warm start from previous manifold (local-frame matching)
+        for (const c of contacts) {
+            const prevList = world.warmCache.get(c.key);
+            if (prevList) {
+                const tol2 = Math.max(1, c.a.boundR * .08) ** 2;
+                let best = null, bestD = tol2;
+                for (const pr of prevList) {
+                    if (pr._used) continue;
+                    const dx = pr.la[0] - c._laA[0], dy = pr.la[1] - c._laA[1], dz = pr.la[2] - c._laA[2];
+                    const d2 = dx * dx + dy * dy + dz * dz;
+                    if (d2 < bestD) { bestD = d2; best = pr; }
+                }
+                // reject stale impulses whose contact normal has rotated away
+                if (best && vdot(best.n, c.n) > .95) {
+                    best._used = true;
+                    c.lN = best.lN;
+                    c.lT1 = best.ft[0] * c.t1[0] + best.ft[1] * c.t1[1] + best.ft[2] * c.t1[2];
+                    c.lT2 = best.ft[0] * c.t2[0] + best.ft[1] * c.t2[1] + best.ft[2] * c.t2[2];
+                    applyImpulse(c, c.n, c.lN);
+                    applyImpulse(c, c.t1, c.lT1);
+                    applyImpulse(c, c.t2, c.lT2);
+                }
+            }
+            if (world.debug && (c.a.id === world.debug.body || (c.b && c.b.id === world.debug.body)))
+                console.log(`   ct ${c.a.id}-${c.b ? c.b.id : "G"} d=${c.depth.toFixed(3)} n=(${c.n[0].toFixed(2)},${c.n[1].toFixed(2)},${c.n[2].toFixed(2)}) p=(${c.p[0].toFixed(1)},${c.p[1].toFixed(1)},${c.p[2].toFixed(1)}) warm=${c.lN.toExponential(1)}`);
+        }
+        if (world.energyProbe) world.energyProbe.warm = keOf(bodies);
+        if (world.debug) {
+            const b1 = bodies[world.debug.body];
+            console.log(`   postWarm v=(${b1.v[0].toFixed(2)},${b1.v[1].toFixed(2)},${b1.v[2].toFixed(2)}) w=(${b1.w[0].toFixed(3)},${b1.w[1].toFixed(3)},${b1.w[2].toFixed(3)})`);
+        }
+        // 3. velocity iterations
+        for (let it = 0; it < world.velIters; it++) {
+            for (const c of contacts) {
+                if ((c.a.sleeping) && (!c.b || c.b.sleeping)) continue;
+                // normal
+                const rv = relVelN(c);
+                const vn = vdot(rv, c.n);
+                let dl = (c.target - vn) * c.mN;
+                const old = c.lN;
+                c.lN = Math.max(0, c.lN + dl);
+                applyImpulse(c, c.n, c.lN - old);
+                // friction (cone clamp on accumulated impulses)
+                const mu = frictionCoef(c);
+                const rv2 = relVelN(c);
+                const vt1 = vdot(rv2, c.t1), vt2 = vdot(rv2, c.t2);
+                let nT1 = c.lT1 - vt1 * c.mT1;
+                let nT2 = c.lT2 - vt2 * c.mT2;
+                const maxF = mu * c.lN;
+                const fl = Math.hypot(nT1, nT2);
+                if (fl > maxF && fl > 1e-12) {
+                    const s = maxF / fl;
+                    nT1 *= s; nT2 *= s;
+                }
+                applyImpulse(c, c.t1, nT1 - c.lT1);
+                applyImpulse(c, c.t2, nT2 - c.lT2);
+                c.lT1 = nT1; c.lT2 = nT2;
+            }
+        }
+        // ---- rolling / ploughing resistance (ground-type dependent).
+        // Without it a ball keeps rolling forever after any small kick (drag
+        // alone is far too weak), which reads as "moves with no applied force".
+        if (world.rollingResistance > 0) {
+            const seen = new Set();
+            for (const c of contacts) {
+                if (c.b || c.lN <= 0 || c.a.sleeping || c.a.isStatic) continue;
+                if (seen.has(c.a)) continue;
+                seen.add(c.a);
+                const b = c.a;
+                const vh = Math.hypot(b.v[0], b.v[2]);
+                const dv = world.rollingResistance * world.gravity * dt;
+                if (vh <= dv) {
+                    b.v[0] = 0; b.v[2] = 0;
+                    b.w[0] = 0; b.w[2] = 0;
+                } else {
+                    const sc = (vh - dv) / vh;
+                    b.v[0] *= sc; b.v[2] *= sc;
+                    b.w[0] *= sc; b.w[2] *= sc; // keep rolling ratio v = ω×r
+                }
+            }
+        }
+        if (world.energyProbe) world.energyProbe.vel = keOf(bodies);
+        if (world.debug) {
+            const b1 = bodies[world.debug.body];
+            console.log(`   postVel v=(${b1.v[0].toFixed(2)},${b1.v[1].toFixed(2)},${b1.v[2].toFixed(2)}) w=(${b1.w[0].toFixed(3)},${b1.w[1].toFixed(3)},${b1.w[2].toFixed(3)}) nc=${contacts.length}`);
+        }
+        // 4. integrate positions
+        for (const b of bodies) {
+            if (b.isStatic || b.sleeping) continue;
+            vaddScaled(b.x, b.v, dt);
+            qIntegrate(b.q, b.w, dt);
+            updateBodyFrame(b);
+        }
+        // 5. NGS positional correction (recompute penetration from anchors)
+        for (let it = 0; it < world.posIters; it++) {
+            let any = false;
+            for (const c of contacts) {
+                if ((c.a.sleeping) && (!c.b || c.b.sleeping)) continue;
+                // re-evaluate depth cheaply: advance stored point with bodies
+                const pen = reprojectDepth(c);
+                const corr = Math.min(pen - CONTACT_SLOP, 3); // ≤3mm per iteration
+                if (corr <= 0) continue;
+                any = true;
+                vsub(c.rA, c.p, c.a.x);
+                if (c.b) vsub(c.rB, c.p, c.b.x);
+                const mN = effMass(c, c.n);
+                const lambda = corr * .55 * mN;
+                positionalImpulse(c, lambda);
+            }
+            if (!any) break;
+        }
+        if (world.energyProbe) world.energyProbe.pos = keOf(bodies);
+        // 6. bookkeeping: contact forces for viz + warm cache + sleeping
+        for (const c of contacts) {
+            if (c.lN > 0) {
+                if (c.n[1] > .35) (c.a._supPts || (c.a._supPts = [])).push(c.p);
+                if (c.b && c.n[1] < -.35) (c.b._supPts || (c.b._supPts = [])).push(c.p);
+            }
+            let list = newCache.get(c.key);
+            if (!list) newCache.set(c.key, list = []);
+            list.push({
+                la: Float64Array.from(c._laA),
+                n: Float64Array.from(c.n),
+                lN: c.lN,
+                ft: [c.t1[0] * c.lT1 + c.t2[0] * c.lT2, c.t1[1] * c.lT1 + c.t2[1] * c.lT2, c.t1[2] * c.lT1 + c.t2[2] * c.lT2]
+            });
+            if (c.lN > 0)
+                world.contactEvents.push({
+                    a: c.a, b: c.b,
+                    n: Float64Array.from(c.n),
+                    p: Float64Array.from(c.p),
+                    forceN: c.lN / dt, // mN
+                    forceT: [ // friction force vector (mN)
+                        (c.t1[0] * c.lT1 + c.t2[0] * c.lT2) / dt,
+                        (c.t1[1] * c.lT1 + c.t2[1] * c.lT2) / dt,
+                        (c.t1[2] * c.lT1 + c.t2[2] * c.lT2) / dt
+                    ]
+                });
+        }
+        world.warmCache = newCache;
+        if (world.satAxis && world.satAxis.size > 64) world.satAxis.clear();
+        for (const b of bodies) {
+            if (b.isStatic) continue;
+            const supported = b.sleeping || comOverSupport(b);
+            b._supPts = null;
+            if (supported &&
+                vlen2(b.v) < world.sleepLinTol * world.sleepLinTol &&
+                vlen2(b.w) < world.sleepAngTol * world.sleepAngTol) {
+                b.sleepTime += dt;
+                if (b.sleepTime > world.sleepDelay && !b.sleeping) {
+                    b.sleeping = true;
+                    vset(b.v, 0, 0, 0); vset(b.w, 0, 0, 0);
+                }
+            } else if (!b.sleeping) {
+                b.sleepTime = 0;
+            }
+            // safety
+            if (!Number.isFinite(vlen2(b.v)) || !Number.isFinite(vlen2(b.x))) {
+                vset(b.v, 0, 0, 0); vset(b.w, 0, 0, 0);
+            }
+        }
+        return contacts.length;
+    }
+    function wake(b) { if (b && !b.isStatic) { b.sleeping = false; b.sleepTime = 0; } }
+    // Resolve initial interpenetration positionally, using the REAL mesh
+    // narrow phase. (The app's legacy routine compared AABBs, so a box resting
+    // on a wedge's slope was "overlapping" and got teleported sideways.)
+    function settleOverlaps(world, iters = 12) {
+        let moved = 0;
+        for (let it = 0; it < iters; it++) {
+            const contacts = detectContacts(world);
+            let any = false;
+            for (const c of contacts) {
+                if (c.depth <= CONTACT_SLOP) continue;
+                vsub(c.rA, c.p, c.a.x);
+                if (c.b) vsub(c.rB, c.p, c.b.x);
+                const mN = effMass(c, c.n);
+                positionalImpulse(c, (c.depth - CONTACT_SLOP) * .8 * mN);
+                any = true; moved++;
+            }
+            if (!any) break;
+        }
+        for (const b of world.bodies) {
+            vset(b.v, 0, 0, 0); vset(b.w, 0, 0, 0);
+            b.sleeping = false; b.sleepTime = 0;
+        }
+        return moved;
+    }
+    // static equilibrium test: horizontal COM inside the support polygon
+    function comOverSupport(b) {
+        const pts = b._supPts;
+        if (!pts || !pts.length) return false;
+        const margin = Math.max(1.5, b.boundR * .02);
+        const cx = b.x[0], cz = b.x[2];
+        if (pts.length === 1)
+            return Math.hypot(pts[0][0] - cx, pts[0][2] - cz) < margin;
+        if (pts.length === 2) { // distance to segment in xz
+            const ax = pts[0][0], az = pts[0][2], bx = pts[1][0], bz = pts[1][2];
+            const dx = bx - ax, dz = bz - az;
+            const L2 = dx * dx + dz * dz;
+            const t = L2 > 1e-12 ? Math.max(0, Math.min(1, ((cx - ax) * dx + (cz - az) * dz) / L2)) : 0;
+            return Math.hypot(ax + t * dx - cx, az + t * dz - cz) < margin;
+        }
+        // >=3 points: inside convex hull (expanded by margin) — approximate via
+        // "inside all edges of hull of points": use gift-wrap-free test: point is
+        // inside hull iff it is a convex combination — cheap test: for every pair
+        // forming a hull edge... simpler robust: check the point is within margin
+        // of the polygon by testing sign consistency against centroid.
+        let gx = 0, gz = 0;
+        for (const p of pts) { gx += p[0]; gz += p[2]; }
+        gx /= pts.length; gz /= pts.length;
+        // sort by angle around centroid
+        const ord = [...pts].sort((p, q) => Math.atan2(p[2] - gz, p[0] - gx) - Math.atan2(q[2] - gz, q[0] - gx));
+        let inside = true;
+        for (let i = 0; i < ord.length; i++) {
+            const p = ord[i], q = ord[(i + 1) % ord.length];
+            const ex = q[0] - p[0], ez = q[2] - p[2];
+            const el = Math.hypot(ex, ez) || 1;
+            // signed distance of COM left of edge (hull is CCW after sort)
+            const d = ((cx - p[0]) * ez - (cz - p[2]) * ex) / el;
+            if (d > margin) { inside = false; break; }
+        }
+        return inside;
+    }
+    function frictionCoef(c) {
+        const fa = c.a.friction, fb = c.b ? c.b.friction : (c.a.groundFriction ?? .5);
+        return Math.sqrt(Math.max(0, fa) * Math.max(0, fb));
+    }
+    function reprojectDepth(c) {
+        const la = c._laA || (c._laA = bodyWorldToLocal(v3(), c.a, c.p));
+        const wa = bodyLocalToWorld(v3(), c.a, la);
+        if (!c.b) {
+            // ground: penetration = -y of the anchored point moved with A
+            vcopy(c.p, wa);
+            return -wa[1];
+        }
+        const lb = c._laB || (c._laB = bodyWorldToLocal(v3(), c.b, c.p));
+        const wb = bodyLocalToWorld(v3(), c.b, lb);
+        const d = v3(); vsub(d, wa, wb);
+        // anchors coincided at detection (separation 0, penetration c.depth);
+        // A moving along +n reduces penetration.
+        return c.depth - vdot(d, c.n);
+    }
+    function positionalImpulse(c, lambda) {
+        const a = c.a, b = c.b;
+        const imp = vscale(v3(), c.n, lambda);
+        if (dynMass(a)) {
+            vaddScaled(a.x, imp, a.invMass);
+            const la = vcross(v3(), c.rA, imp);
+            const dw = m3MulV(v3(), a.invIworld, la);
+            const ang = vlen(dw);
+            if (ang > 1e-12) {
+                qIntegrate(a.q, dw, 1);
+                updateBodyFrame(a);
+            }
+        }
+        if (b && dynMass(b)) {
+            vaddScaled(b.x, imp, -b.invMass);
+            const lb = vcross(v3(), c.rB, imp);
+            const dw = m3MulV(v3(), b.invIworld, lb);
+            if (vlen(dw) > 1e-12) {
+                vscale(dw, dw, -1);
+                qIntegrate(b.q, dw, 1);
+                updateBodyFrame(b);
+            }
+        }
+    }
+
+    /* =====================================================================
+       FEM — linear elastic static analysis.
+       C3D4 / C3D10 tetrahedra, CSR sparse assembly,
+       Jacobi-preconditioned Conjugate Gradient, Gauss-point stress
+       recovery with nodal extrapolation.
+       nodes: Float64Array(3n) — world/object coordinates in mm
+       conn : Int32Array(4e) or Int32Array(10e)
+       =================================================================== */
+    const GAUSS_TET4 = (() => {
+        const a = .585410196624969, b = .138196601125011;
+        return [
+            [a, b, b, b], [b, a, b, b], [b, b, a, b], [b, b, b, a]
+        ];
+    })();
+    // TET10 shape functions & derivatives w.r.t. (L1,L2,L3) with L0=1-L1-L2-L3
+    function tet10Shape(L) {
+        const N = new Float64Array(10);
+        const dN = Array.from({ length: 10 }, () => new Float64Array(3));
+        const dL = [[-1, -1, -1], [1, 0, 0], [0, 1, 0], [0, 0, 1]];
+        for (let i = 0; i < 4; i++) {
+            N[i] = L[i] * (2 * L[i] - 1);
+            for (let k = 0; k < 3; k++) dN[i][k] = (4 * L[i] - 1) * dL[i][k];
+        }
+        const ed = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]];
+        for (let e = 0; e < 6; e++) {
+            const [a, b] = ed[e], i = 4 + e;
+            N[i] = 4 * L[a] * L[b];
+            for (let k = 0; k < 3; k++) dN[i][k] = 4 * (dL[a][k] * L[b] + L[a] * dL[b][k]);
+        }
+        return { N, dN };
+    }
+    function elasticD(E, nu) {
+        const mu = E / (2 * (1 + nu)), lam = E * nu / ((1 + nu) * (1 - 2 * nu));
+        const D = new Float64Array(36);
+        for (let i = 0; i < 3; i++)
+            for (let j = 0; j < 3; j++) D[i * 6 + j] = i === j ? lam + 2 * mu : lam;
+        D[3 * 6 + 3] = D[4 * 6 + 4] = D[5 * 6 + 5] = mu;
+        return D;
+    }
+    // B matrix (6 x 3m) from cartesian shape gradients g[m][3]
+    function fillB(B, g, m) {
+        B.fill(0);
+        const w = 3 * m;
+        for (let i = 0; i < m; i++) {
+            const gx = g[i][0], gy = g[i][1], gz = g[i][2], c = i * 3;
+            B[0 * w + c] = gx;
+            B[1 * w + c + 1] = gy;
+            B[2 * w + c + 2] = gz;
+            B[3 * w + c] = gy; B[3 * w + c + 1] = gx;
+            B[4 * w + c + 1] = gz; B[4 * w + c + 2] = gy;
+            B[5 * w + c] = gz; B[5 * w + c + 2] = gx;
+        }
+    }
+    function inv3(m) {
+        const o = new Float64Array(9);
+        return m3Inv(o, m) ? o : null;
+    }
+
+    function femSolve(opts) {
+        const { nodes, conn, elemType, E, nu, density, gEff, fixed } = opts;
+        const nn = nodes.length / 3, ndof = nn * 3;
+        const npe = elemType === "C3D10" ? 10 : 4;
+        const ne = conn.length / npe;
+        const D = elasticD(E, nu);
+        const w = 3 * npe;
+        const B = new Float64Array(6 * w);
+        const DB = new Float64Array(6 * w);
+        // --- element loop: Ke, volumes, loads, store gauss B for stress
+        const KeAll = new Float64Array(ne * w * w);
+        const vols = new Float64Array(ne);
+        const F = new Float64Array(ndof);
+        let volume = 0;
+        const gaussB = elemType === "C3D10" ? new Float64Array(ne * 4 * 6 * w) : null;
+        const gDetJ = elemType === "C3D10" ? new Float64Array(ne * 4) : null;
+        const elemB = elemType === "C3D4" ? new Float64Array(ne * 6 * w) : null;
+
+        const Jm = new Float64Array(9);
+        for (let e = 0; e < ne; e++) {
+            const c0 = e * npe;
+            const Ke = KeAll.subarray(e * w * w, (e + 1) * w * w);
+            if (elemType === "C3D4") {
+                const n0 = conn[c0] * 3, n1 = conn[c0 + 1] * 3, n2 = conn[c0 + 2] * 3, n3 = conn[c0 + 3] * 3;
+                // Jacobian from corner coords
+                for (let k = 0; k < 3; k++) {
+                    Jm[k] = nodes[n1 + k] - nodes[n0 + k];
+                    Jm[3 + k] = nodes[n2 + k] - nodes[n0 + k];
+                    Jm[6 + k] = nodes[n3 + k] - nodes[n0 + k];
+                }
+                const det = Jm[0] * (Jm[4] * Jm[8] - Jm[5] * Jm[7]) - Jm[1] * (Jm[3] * Jm[8] - Jm[5] * Jm[6]) + Jm[2] * (Jm[3] * Jm[7] - Jm[4] * Jm[6]);
+                const V = Math.abs(det) / 6;
+                vols[e] = V; volume += V;
+                if (V < 1e-12) continue;
+                const Ji = inv3(Jm);
+                if (!Ji) continue;
+                // dL/dx rows: gradient of L1,L2,L3 = Ji columns; L0 = -sum
+                const g = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+                for (let k = 0; k < 3; k++) {
+                    g[1][k] = Ji[k * 3]; g[2][k] = Ji[k * 3 + 1]; g[3][k] = Ji[k * 3 + 2];
+                    g[0][k] = -g[1][k] - g[2][k] - g[3][k];
+                }
+                fillB(B, g, 4);
+                elemB.set(B, e * 6 * w);
+                // Ke = B^T D B * V
+                btdb(Ke, B, D, w, V);
+                // gravity: V/4 per corner (downward y)
+                const fz = -density * gEff * 1e-9 * V / 4;
+                for (let i = 0; i < 4; i++) F[conn[c0 + i] * 3 + 1] += fz;
+            } else {
+                let Vtot = 0;
+                for (let gp = 0; gp < 4; gp++) {
+                    const { dN } = tet10Shape(GAUSS_TET4[gp]);
+                    Jm.fill(0);
+                    for (let i = 0; i < 10; i++) {
+                        const ni = conn[c0 + i] * 3;
+                        for (let r = 0; r < 3; r++)
+                            for (let k = 0; k < 3; k++)
+                                Jm[r * 3 + k] += dN[i][r] * nodes[ni + k];
+                    }
+                    const det = Jm[0] * (Jm[4] * Jm[8] - Jm[5] * Jm[7]) - Jm[1] * (Jm[3] * Jm[8] - Jm[5] * Jm[6]) + Jm[2] * (Jm[3] * Jm[7] - Jm[4] * Jm[6]);
+                    const wgt = Math.abs(det) / 24; // V/4 per point for straight tets
+                    if (wgt < 1e-14) continue;
+                    Vtot += wgt;
+                    const Ji = inv3(Jm);
+                    if (!Ji) continue;
+                    const g = [];
+                    for (let i = 0; i < 10; i++) {
+                        g.push([
+                            Ji[0] * dN[i][0] + Ji[1] * dN[i][1] + Ji[2] * dN[i][2],
+                            Ji[3] * dN[i][0] + Ji[4] * dN[i][1] + Ji[5] * dN[i][2],
+                            Ji[6] * dN[i][0] + Ji[7] * dN[i][1] + Ji[8] * dN[i][2]
+                        ]);
+                    }
+                    fillB(B, g, 10);
+                    gaussB.set(B, (e * 4 + gp) * 6 * w);
+                    gDetJ[e * 4 + gp] = wgt;
+                    btdb(Ke, B, D, w, wgt);
+                }
+                vols[e] = Vtot; volume += Vtot;
+                // consistent gravity load: corners -V/20, midsides V/5
+                const base = -density * gEff * 1e-9 * Vtot;
+                for (let i = 0; i < 4; i++) F[conn[c0 + i] * 3 + 1] += base * (-1 / 20);
+                for (let i = 4; i < 10; i++) F[conn[c0 + i] * 3 + 1] += base * (1 / 5);
+            }
+        }
+        if (opts.extraLoads) {
+            for (const { dof, value } of opts.extraLoads) F[dof] += value;
+        }
+        // --- CSR pattern from node adjacency
+        const adj = Array.from({ length: nn }, () => new Set());
+        for (let e = 0; e < ne; e++)
+            for (let i = 0; i < npe; i++) {
+                const a = conn[e * npe + i];
+                for (let j = 0; j < npe; j++) adj[a].add(conn[e * npe + j]);
+            }
+        const rowPtr = new Int32Array(ndof + 1);
+        for (let i = 0; i < nn; i++) {
+            const cnt = adj[i].size * 3;
+            rowPtr[i * 3 + 1] = rowPtr[i * 3] + cnt;
+            rowPtr[i * 3 + 2] = rowPtr[i * 3 + 1] + cnt;
+            rowPtr[i * 3 + 3] = rowPtr[i * 3 + 2] + cnt;
+        }
+        const nnz = rowPtr[ndof];
+        const colIdx = new Int32Array(nnz);
+        const val = new Float64Array(nnz);
+        for (let i = 0; i < nn; i++) {
+            const cols = [...adj[i]].sort((a, b) => a - b);
+            for (let r = 0; r < 3; r++) {
+                let o = rowPtr[i * 3 + r];
+                for (const cn of cols) {
+                    colIdx[o] = cn * 3; colIdx[o + 1] = cn * 3 + 1; colIdx[o + 2] = cn * 3 + 2;
+                    o += 3;
+                }
+            }
+        }
+        const findCol = (row, col) => {
+            let lo = rowPtr[row], hi = rowPtr[row + 1] - 1;
+            while (lo <= hi) {
+                const mid = (lo + hi) >> 1;
+                if (colIdx[mid] === col) return mid;
+                if (colIdx[mid] < col) lo = mid + 1; else hi = mid - 1;
+            }
+            return -1;
+        };
+        // scatter
+        for (let e = 0; e < ne; e++) {
+            const Ke = KeAll.subarray(e * w * w, (e + 1) * w * w);
+            for (let i = 0; i < npe; i++)
+                for (let di = 0; di < 3; di++) {
+                    const row = conn[e * npe + i] * 3 + di;
+                    for (let j = 0; j < npe; j++)
+                        for (let dj = 0; dj < 3; dj++) {
+                            const col = conn[e * npe + j] * 3 + dj;
+                            const k = findCol(row, col);
+                            if (k >= 0) val[k] += Ke[(i * 3 + di) * w + j * 3 + dj];
+                        }
+                }
+        }
+        // Dirichlet: zero row/col, unit diagonal
+        for (let d = 0; d < ndof; d++) {
+            if (!fixed[d]) continue;
+            F[d] = 0;
+            for (let k = rowPtr[d]; k < rowPtr[d + 1]; k++)
+                val[k] = colIdx[k] === d ? 1 : 0;
+        }
+        for (let d = 0; d < ndof; d++) {
+            if (fixed[d]) continue;
+            for (let k = rowPtr[d]; k < rowPtr[d + 1]; k++)
+                if (fixed[colIdx[k]]) val[k] = 0;
+        }
+        // --- Jacobi-PCG
+        const diag = new Float64Array(ndof);
+        for (let d = 0; d < ndof; d++) {
+            const k = findCol(d, d);
+            diag[d] = k >= 0 && Math.abs(val[k]) > 1e-30 ? 1 / val[k] : 1;
+        }
+        const u = new Float64Array(ndof);
+        const r = Float64Array.from(F);
+        const z = new Float64Array(ndof);
+        const p = new Float64Array(ndof);
+        const Ap = new Float64Array(ndof);
+        const spmv = (out, x) => {
+            for (let row = 0; row < ndof; row++) {
+                let s = 0;
+                for (let k = rowPtr[row]; k < rowPtr[row + 1]; k++) s += val[k] * x[colIdx[k]];
+                out[row] = s;
+            }
+        };
+        const dot = (a, b) => { let s = 0; for (let i = 0; i < ndof; i++) s += a[i] * b[i]; return s; };
+        const bNorm = Math.sqrt(dot(F, F));
+        let iters = 0, relRes = 0;
+        if (bNorm > 1e-30) {
+            for (let i = 0; i < ndof; i++) z[i] = diag[i] * r[i];
+            p.set(z);
+            let rz = dot(r, z);
+            const maxIt = Math.min(4 * ndof, 12000);
+            const tol = 1e-9 * bNorm;
+            for (iters = 0; iters < maxIt; iters++) {
+                spmv(Ap, p);
+                const pAp = dot(p, Ap);
+                if (Math.abs(pAp) < 1e-300) break;
+                const alpha = rz / pAp;
+                for (let i = 0; i < ndof; i++) { u[i] += alpha * p[i]; r[i] -= alpha * Ap[i]; }
+                const rn = Math.sqrt(dot(r, r));
+                relRes = rn / bNorm;
+                if (rn < tol) { iters++; break; }
+                for (let i = 0; i < ndof; i++) z[i] = diag[i] * r[i];
+                const rz2 = dot(r, z);
+                const beta = rz2 / rz;
+                rz = rz2;
+                for (let i = 0; i < ndof; i++) p[i] = z[i] + beta * p[i];
+            }
+        }
+        /* --- stress recovery --------------------------------------------- */
+        const nodalStress = new Float64Array(nn * 6);
+        const nodalWeight = new Float64Array(nn);
+        let maxVon = 0, maxPrin = 0, maxShear = 0;
+        const sig = new Float64Array(6);
+        const ue = new Float64Array(w);
+        if (elemType === "C3D4") {
+            for (let e = 0; e < ne; e++) {
+                if (vols[e] < 1e-12) continue;
+                for (let i = 0; i < 4; i++)
+                    for (let k = 0; k < 3; k++) ue[i * 3 + k] = u[conn[e * 4 + i] * 3 + k];
+                const Be = elemB.subarray(e * 6 * w, (e + 1) * 6 * w);
+                stressFromB(sig, Be, D, ue, w);
+                const von = vonMises(sig);
+                const pr = principal(sig);
+                maxVon = Math.max(maxVon, von);
+                maxPrin = Math.max(maxPrin, Math.abs(pr[0]), Math.abs(pr[2]));
+                maxShear = Math.max(maxShear, (pr[0] - pr[2]) / 2);
+                for (let i = 0; i < 4; i++) {
+                    const nd = conn[e * 4 + i];
+                    for (let k = 0; k < 6; k++) nodalStress[nd * 6 + k] += sig[k] * vols[e];
+                    nodalWeight[nd] += vols[e];
+                }
+            }
+        } else {
+            // extrapolation matrix gauss -> corners
+            const M = [];
+            for (let j = 0; j < 4; j++) M.push(GAUSS_TET4[j].slice());
+            const Minv = invertSmall(M);
+            const gs = new Float64Array(4 * 6);
+            for (let e = 0; e < ne; e++) {
+                if (vols[e] < 1e-12) continue;
+                for (let i = 0; i < 10; i++)
+                    for (let k = 0; k < 3; k++) ue[i * 3 + k] = u[conn[e * 10 + i] * 3 + k];
+                gs.fill(0);
+                let anyG = false;
+                for (let gp = 0; gp < 4; gp++) {
+                    if (gDetJ[e * 4 + gp] < 1e-14) continue;
+                    anyG = true;
+                    const Bg = gaussB.subarray((e * 4 + gp) * 6 * w, (e * 4 + gp + 1) * 6 * w);
+                    stressFromB(sig, Bg, D, ue, w);
+                    for (let k = 0; k < 6; k++) gs[gp * 6 + k] = sig[k];
+                    const von = vonMises(sig);
+                    const pr = principal(sig);
+                    maxVon = Math.max(maxVon, von);
+                    maxPrin = Math.max(maxPrin, Math.abs(pr[0]), Math.abs(pr[2]));
+                    maxShear = Math.max(maxShear, (pr[0] - pr[2]) / 2);
+                }
+                if (!anyG) continue;
+                // extrapolate to 4 corners, weight by element volume
+                for (let cnr = 0; cnr < 4; cnr++) {
+                    const nd = conn[e * 10 + cnr];
+                    for (let k = 0; k < 6; k++) {
+                        let s = 0;
+                        for (let gp = 0; gp < 4; gp++) s += Minv[cnr][gp] * gs[gp * 6 + k];
+                        nodalStress[nd * 6 + k] += s * vols[e];
+                    }
+                    nodalWeight[nd] += vols[e];
+                }
+            }
+        }
+        for (let n = 0; n < nn; n++)
+            if (nodalWeight[n] > 1e-14)
+                for (let k = 0; k < 6; k++) nodalStress[n * 6 + k] /= nodalWeight[n];
+        // midside nodes (C3D10): average endpoints
+        if (elemType === "C3D10" && opts.edges) {
+            for (const [mid, a, b] of opts.edges) {
+                for (let k = 0; k < 6; k++)
+                    nodalStress[mid * 6 + k] = (nodalStress[a * 6 + k] + nodalStress[b * 6 + k]) / 2;
+                nodalWeight[mid] = 1;
+            }
+        }
+        const nodeVon = new Float64Array(nn);
+        const nodePrin = new Float64Array(nn * 3);
+        const nodeShear = new Float64Array(nn);
+        for (let n = 0; n < nn; n++) {
+            const s = nodalStress.subarray(n * 6, n * 6 + 6);
+            nodeVon[n] = vonMises(s);
+            const pr = principal(s);
+            nodePrin[n * 3] = pr[0]; nodePrin[n * 3 + 1] = pr[1]; nodePrin[n * 3 + 2] = pr[2];
+            nodeShear[n] = (pr[0] - pr[2]) / 2;
+        }
+        return {
+            u, nodeVon, nodePrin, nodeShear,
+            maxVon, maxPrin, maxShear,
+            iters, relRes, volume, ndof, nnz
+        };
+    }
+    function btdb(Ke, B, D, w, wgt) {
+        // Ke += B^T D B * wgt   — exploit 6-row structure
+        const DB = new Float64Array(6 * w);
+        for (let i = 0; i < 6; i++)
+            for (let j = 0; j < w; j++) {
+                let s = 0;
+                for (let k = 0; k < 6; k++) s += D[i * 6 + k] * B[k * w + j];
+                DB[i * w + j] = s;
+            }
+        for (let i = 0; i < w; i++)
+            for (let j = 0; j < w; j++) {
+                let s = 0;
+                for (let k = 0; k < 6; k++) s += B[k * w + i] * DB[k * w + j];
+                Ke[i * w + j] += s * wgt;
+            }
+    }
+    function stressFromB(sig, B, D, ue, w) {
+        const eps = new Float64Array(6);
+        for (let k = 0; k < 6; k++) {
+            let s = 0;
+            for (let j = 0; j < w; j++) s += B[k * w + j] * ue[j];
+            eps[k] = s;
+        }
+        for (let k = 0; k < 6; k++) {
+            let s = 0;
+            for (let j = 0; j < 6; j++) s += D[k * 6 + j] * eps[j];
+            sig[k] = s;
+        }
+    }
+    function vonMises(s) {
+        return Math.sqrt(.5 * ((s[0] - s[1]) ** 2 + (s[1] - s[2]) ** 2 + (s[2] - s[0]) ** 2) + 3 * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));
+    }
+    function principal(s) {
+        const sx = s[0], sy = s[1], sz = s[2], txy = s[3], tyz = s[4], tzx = s[5];
+        const off = txy * txy + tyz * tyz + tzx * tzx;
+        if (off < 1e-20) return [sx, sy, sz].sort((a, b) => b - a);
+        const m = (sx + sy + sz) / 3;
+        const p2 = (sx - m) ** 2 + (sy - m) ** 2 + (sz - m) ** 2 + 2 * off;
+        const pq = Math.sqrt(p2 / 6);
+        const bx = (sx - m) / pq, by = (sy - m) / pq, bz = (sz - m) / pq;
+        const b12 = txy / pq, b23 = tyz / pq, b31 = tzx / pq;
+        const det = bx * (by * bz - b23 * b23) - b12 * (b12 * bz - b23 * b31) + b31 * (b12 * b23 - by * b31);
+        const phi = Math.acos(Math.max(-1, Math.min(1, det / 2))) / 3;
+        const e1 = m + 2 * pq * Math.cos(phi);
+        const e3 = m + 2 * pq * Math.cos(phi + 2 * Math.PI / 3);
+        const e2 = 3 * m - e1 - e3;
+        return [e1, e2, e3].sort((a, b) => b - a);
+    }
+    function invertSmall(M) {
+        const n = M.length;
+        const A = M.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+        for (let c = 0; c < n; c++) {
+            let piv = c;
+            for (let rIdx = c + 1; rIdx < n; rIdx++)
+                if (Math.abs(A[rIdx][c]) > Math.abs(A[piv][c])) piv = rIdx;
+            [A[c], A[piv]] = [A[piv], A[c]];
+            const d = A[c][c];
+            for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+            for (let rIdx = 0; rIdx < n; rIdx++) {
+                if (rIdx === c) continue;
+                const f = A[rIdx][c];
+                for (let j = 0; j < 2 * n; j++) A[rIdx][j] -= f * A[c][j];
+            }
+        }
+        return A.map(row => row.slice(n));
+    }
+
+    return {
+        // math
+        v3, vset, vcopy, vadd, vsub, vscale, vaddScaled, vdot, vcross, vlen, vnorm,
+        qIdent, qNormalize, qIntegrate, qRotate, qRotateInv, qToMat3,
+        m3MulV, m3Inv, m3ABAt,
+        // geometry / mass
+        massProperties, buildBVH, bvhClosest, closestPointTriangle,
+        // rigid body
+        createBody, createWorld, stepWorld, updateBodyFrame, settleOverlaps,
+        bodyLocalToWorld, bodyWorldToLocal, wake,
+        CONTACT_SLOP, CONTACT_MARGIN,
+        // FEM
+        femSolve, vonMises, principal, elasticD, tet10Shape, invertSmall
+    };
+})();
+if (typeof module !== "undefined" && module.exports) module.exports = FF2;
+
+
+/* ============================================================================
+   FF2 APP ADAPTER — wires the FF2 industrial kernels into the CAD app.
+   Replaces the previous prototype contact solver and BtDB matrix-free FEM:
+   - dynamics: substepped sequential impulses w/ warm starting, friction cone,
+     speculative contacts, NGS positional correction, full inertia tensors,
+     exact mesh mass properties, BVH narrow phase, OBB-SAT manifolds, sleeping
+   - FEM: C3D4/C3D10, CSR sparse assembly, Jacobi-PCG (rel.tol 1e-9),
+     Gauss-point stress recovery with nodal extrapolation
+   - keeps: force-arrow visualization, CalculiX/Abaqus .inp export, mesh audit
+   ========================================================================= */
+(() => {
+    const FF2_VERSION = "FF2 v3.3";
+    console.log("[3DCAD++] physics", FF2_VERSION);
+    const $$ = (s) => V(s);
+    const __ff = { showForces: false, contactEvents: new Map(), forceVisuals: [], history: [], springs: [], simT: 0 };
+
+    /* ------------------------------------------------------------ styles/UI */
+    function __ffAddStyle() {
+        if (document.getElementById("ff-industrial-fem-style")) return;
+        const st = document.createElement("style");
+        st.id = "ff-industrial-fem-style";
+        st.textContent = `
       .fem-actions #fem-inp-export{background:#111;color:#fff;border-color:#111}
       .fem-industrial-note{margin-top:7px;padding:7px;border-radius:8px;background:#eef6ff;color:#35506c;font-size:8px;line-height:1.45}
       .sim-state .contact-note{display:block;margin-top:3px;color:#6f746a}
@@ -4000,502 +5764,998 @@ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
       .sim-projection button{background:#f5f5f1;color:#555}.sim-projection button.active{background:#20211c;color:#fff;border-color:#20211c}
       .force-label{position:absolute;z-index:7;pointer-events:none;padding:3px 6px;border-radius:5px;background:#fffffff2;border:1px solid currentColor;font:800 9px ui-monospace,monospace;white-space:nowrap;transform:translate(6px,-50%)}
     `;
-    document.head.appendChild(st);
-  }
-
-  function __ffAddUi(){
-    __ffAddStyle();
-    const actions=$$(".fem-actions");
-    if(actions && !document.getElementById("fem-inp-export")){
-      actions.insertAdjacentHTML("beforeend",'<button id="fem-inp-export" title="CalculiX/Abaqus互換の入力ファイルを保存します">INP出力</button>');
+        document.head.appendChild(st);
     }
-    const panel=$$(".fem-panel");
-    if(panel && !document.getElementById("fem-industrial-note")){
-      panel.insertAdjacentHTML("beforeend",'<div id="fem-industrial-note" class="fem-industrial-note">産業用に近い確認は、FEM解析後に「メッシュ収束確認」「四面体品質検査」「解析監査レポート」を行い、最後にINP出力してCalculiX等の外部ソルバーで再解析してください。</div>');
+    function __ffAddUi() {
+        __ffAddStyle();
+        const actions = $$(".fem-actions");
+        if (actions && !document.getElementById("fem-inp-export")) {
+            actions.insertAdjacentHTML("beforeend", '<button id="fem-inp-export" title="CalculiX/Abaqus互換の入力ファイルを保存します">INP出力</button>');
+        }
+        const panel = $$(".fem-panel");
+        if (panel && !document.getElementById("fem-industrial-note")) {
+            panel.insertAdjacentHTML("beforeend", '<div id="fem-industrial-note" class="fem-industrial-note">ブラウザ内ソルバーはC3D4/C3D10要素＋疎行列PCG（相対残差1e-9）で解きます。設計確定時は「メッシュ収束確認」「四面体品質検査」を行い、INP出力してCalculiX等の外部ソルバーでも照合してください。</div>');
+        }
+        const b = document.getElementById("fem-inp-export");
+        if (b) b.onclick = __ffExportInp;
+        // Rebind buttons that captured pre-patch function VALUES at module init.
+        // Without this, pressing 元の位置 runs only the legacy reset (object
+        // poses restored but solver bodies keep their old velocities → objects
+        // fly sideways on replay). Arrow wrappers stay late-bound.
+        const rst = $$("#sim-reset");
+        if (rst) rst.onclick = () => { a_(); __ffClearHistory(); __ffUpdatePlayBtn(); };
+        // merged play/pause toggle on the START button; hide the old pause button
+        const startBtn = $$("#sim-start");
+        const pauseBtn = $$("#sim-pause");
+        if (pauseBtn) pauseBtn.style.display = "none";
+        if (startBtn) {
+            startBtn.onclick = () => {
+                if (ye) c9(); else l_();
+                __ffUpdatePlayBtn();
+            };
+            // rewind by 0.1 s of simulated time
+            startBtn.insertAdjacentHTML("afterend", '<button id="sim-rewind" type="button" title="0.1秒だけ巻き戻します">⏪ 0.1秒</button>');
+            const rw = document.getElementById("sim-rewind");
+            rw.style.cssText = "border:1px solid #cfd0c9;border-radius:8px;background:#f5f5f1;padding:8px;font-size:9px;font-weight:800";
+            rw.onclick = __ffRewind;
+        }
+        setInterval(__ffUpdatePlayBtn, 250);
+        const femRun = $$("#fem-run");
+        if (femRun) femRun.onclick = () => K6();
+        const simActions = $$(".sim-actions");
+        if (simActions && !document.getElementById("sim-force-toggle")) {
+            simActions.insertAdjacentHTML("afterend", '<button id="sim-force-toggle" type="button" title="重力・床反力・接触時の作用反作用を矢印と数値で表示">力の矢印</button>');
+            const fb = document.getElementById("sim-force-toggle");
+            fb.style.cssText = "width:100%;margin-top:7px;border:1px solid #cfd0c9;border-radius:8px;background:#f5f5f1;padding:8px;font-size:9px;font-weight:800";
+            fb.onclick = () => __ffSetForceMode(!__ff.showForces, true);
+            fb.insertAdjacentHTML("afterend", '<div class="sim-projection"><span>投影</span><button class="active" data-projection="perspective">一点透視</button><button data-projection="orthographic">平行投影</button></div>');
+            const projection = $$(".sim-projection");
+            projection.style.cssText = "display:grid;grid-template-columns:52px 1fr 1fr;gap:5px;align-items:center;margin-top:7px;font-size:8px;color:#777";
+            projection.querySelectorAll("button").forEach(p => {
+                p.style.cssText = "border:1px solid #cfd0c9;border-radius:7px;padding:7px 2px;font-size:8px;font-weight:800";
+                p.onclick = () => Tx(p.dataset.projection);
+            });
+            document.querySelectorAll(".app-tabs button").forEach(tab => tab.addEventListener("click", () => queueMicrotask(() => __ffSetForceMode(false, false))));
+        }
+        // ---- spring (constant-force) devices -----------------------------
+        const proj = $$(".sim-projection");
+        if (proj && !document.getElementById("ff-springs")) {
+            proj.insertAdjacentHTML("afterend", `
+              <div id="ff-springs" style="margin-top:8px;border:1px solid #cfd0c9;border-radius:8px;padding:7px;font-size:9px">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800">
+                  <span>バネ装置（定力）</span>
+                  <button id="ff-spring-add" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#f5f5f1;padding:4px 8px;font-size:9px;font-weight:800">＋設置</button>
+                </div>
+                <div id="ff-spring-hint" style="color:#8a8f85;margin-top:4px;display:none">地面をクリックして設置位置を選んでください</div>
+                <div id="ff-spring-list"></div>
+              </div>`);
+            document.getElementById("ff-spring-add").onclick = __ffBeginSpringPlacement;
+        }
     }
-    const b=document.getElementById("fem-inp-export");
-    if(b) b.onclick=__ffExportInp;
-    const simActions=$$(".sim-actions");
-    if(simActions && !document.getElementById("sim-force-toggle")){
-      simActions.insertAdjacentHTML("afterend",'<button id="sim-force-toggle" type="button" title="重力・床反力・接触時の作用反作用を矢印と数値で表示">力の矢印：OFF</button>');
-      const fb=document.getElementById("sim-force-toggle");
-      fb.style.cssText="width:100%;margin-top:7px;border:1px solid #cfd0c9;border-radius:8px;background:#f5f5f1;padding:8px;font-size:9px;font-weight:800";
-      fb.onclick=()=>__ffSetForceMode(!__ff.showForces,true);
-      fb.insertAdjacentHTML("afterend",'<div class="sim-projection"><span>投影</span><button class="active" data-projection="perspective">一点透視</button><button data-projection="orthographic">平行投影</button></div>');
-      const projection=$$(".sim-projection");
-      projection.style.cssText="display:grid;grid-template-columns:52px 1fr 1fr;gap:5px;align-items:center;margin-top:7px;font-size:8px;color:#777";
-      projection.querySelectorAll("button").forEach(p=>{p.style.cssText="border:1px solid #cfd0c9;border-radius:7px;padding:7px 2px;font-size:8px;font-weight:800";p.onclick=()=>Tx(p.dataset.projection);});
-      document.querySelectorAll(".app-tabs button").forEach(tab=>tab.addEventListener("click",()=>queueMicrotask(()=>__ffSetForceMode(false,false))));
+    function __ffUpdatePlayBtn() {
+        const b = $$("#sim-start");
+        if (b) b.textContent = ye ? "⏸ 一時停止" : "▶ 再生";
     }
-  }
 
-  function __ffSafeName(s){
-    return String(s||"part").replace(/[^\w\-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,48)||"part";
-  }
-
-  function __ffFmt(x){
-    return Number.isFinite(x)?Number(x).toExponential(10):"0.0";
-  }
-
-  function __ffBuildExportMesh(obj, meshQuality, elementType){
-    const base=Ma(obj,meshQuality||"standard");
-    if(elementType!=="c3d10") return {nodes:base.nodes, elements:base.tets, type:"C3D4", raw:base};
-    const nodes=base.nodes.map(p=>p.clone());
-    const edgeMap=new Map();
-    const mid=(a,b)=>{
-      const key=a<b?`${a}|${b}`:`${b}|${a}`;
-      if(edgeMap.has(key)) return edgeMap.get(key);
-      const p=nodes[a].clone().add(nodes[b]).multiplyScalar(.5);
-      const idx=nodes.length;
-      nodes.push(p);
-      edgeMap.set(key,idx);
-      return idx;
+    /* =================================================================
+       RIGID BODY DYNAMICS
+       ================================================================= */
+    const FRICTION_BY_MAT = {
+        steel: .35, stainless: .35, aluminum: .35, copper: .32,
+        tpu95ahf: .9, cedar: .5, paulownia: .5, ice: .04
     };
-    const elements=base.tets.map(t=>{
-      const [a,b,c,d]=t;
-      return [a,b,c,d, mid(a,b), mid(b,c), mid(c,a), mid(a,d), mid(b,d), mid(c,d)];
-    });
-    return {nodes,elements,type:"C3D10",raw:base};
-  }
+    const NONCONVEX_TYPES = new Set(["curve", "text", "imported", "result"]);
+    let __world = null;
+    let __bodyByObj = new Map();
 
-  function __ffWriteNset(lines, name, ids){
-    lines.push(`*NSET,NSET=${name}`);
-    for(let i=0;i<ids.length;i+=12) lines.push(ids.slice(i,i+12).join(","));
-  }
-
-  function __ffWriteElset(lines, name, ids){
-    lines.push(`*ELSET,ELSET=${name}`);
-    for(let i=0;i<ids.length;i+=12) lines.push(ids.slice(i,i+12).join(","));
-  }
-
-  function __ffExportInp(){
-    const objs=F3();
-    if(!objs.length){ X1("INP出力する物体を配置してください"); return; }
-    const meshQuality=$$("#fem-mesh")?.value||"standard";
-    const elementType=$$("#fem-element")?.value==="c3d10"?"c3d10":"c3d4";
-    const g=($$("#sim-gravity")?.value==="moon"?1.62:9.80665)*1000; // mm/s^2
-    const extra=($$("#fem-load-axis")?.value==="zmin")?Math.max(0,Number($$("#fem-load-value")?.value)||0):0;
-    const title=$$(".doc-title")?.value?.trim()||"3dcadpp_fem";
-    const lines=[];
-    lines.push("*HEADING");
-    lines.push(`** Generated by 3DCAD++ browser FEM exporter`);
-    lines.push(`** Units: mm, N, s, tonne. Young's modulus is MPa = N/mm^2.`);
-    lines.push(`** Density is exported as tonne/mm^3. Gravity uses mm/s^2.`);
-    lines.push(`** Mesh source: browser voxel/tetra approximation. Verify with mesh convergence.`);
-    lines.push("*PREPRINT,ECHO=NO,MODEL=NO,HISTORY=NO,CONTACT=NO");
-
-    let nodeOffset=0, elemOffset=0;
-    const partInfos=[];
-    for(let pi=0;pi<objs.length;pi++){
-      const obj=objs[pi];
-      obj.updateMatrixWorld(true);
-      const partName=__ffSafeName(obj.name||Q8?.[obj.userData.type]||`PART_${pi+1}`);
-      const mat=obj.userData.engineeringMaterial||O3.pla_basic;
-      const mesh=__ffBuildExportMesh(obj,meshQuality,elementType);
-      const nodeIds=mesh.nodes.map((_,i)=>nodeOffset+i+1);
-      const elemIds=mesh.elements.map((_,i)=>elemOffset+i+1);
-      lines.push(`**`);
-      lines.push(`** PART ${pi+1}: ${partName}`);
-      lines.push("*NODE");
-      mesh.nodes.forEach((p,i)=>lines.push(`${nodeOffset+i+1}, ${__ffFmt(p.x)}, ${__ffFmt(p.y)}, ${__ffFmt(p.z)}`));
-      lines.push(`*ELEMENT,TYPE=${mesh.type},ELSET=E_${partName}`);
-      mesh.elements.forEach((el,i)=>lines.push(`${elemOffset+i+1}, ${el.map(v=>nodeOffset+v+1).join(",")}`));
-      __ffWriteElset(lines,`E_${partName}`,elemIds);
-      lines.push(`*SOLID SECTION,ELSET=E_${partName},MATERIAL=M_${partName}`);
-      lines.push("");
-      lines.push(`*MATERIAL,NAME=M_${partName}`);
-      lines.push("*ELASTIC");
-      lines.push(`${__ffFmt(Math.max(1,mat.young||2000))}, ${__ffFmt(Math.min(.485,Math.max(.01,mat.poisson??.35)))}`);
-      lines.push("*DENSITY");
-      lines.push(`${__ffFmt((mat.density||1240)*1e-12)}`);
-      const minY=Math.min(...mesh.nodes.map(p=>p.y));
-      const spanY=Math.max(1,Math.max(...mesh.nodes.map(p=>p.y))-minY);
-      const tol=Math.max(.05,spanY*.025);
-      const fixed=nodeIds.filter((id,i)=>mesh.nodes[i].y<=minY+tol);
-      __ffWriteNset(lines,`N_FIXED_${partName}`,fixed);
-      __ffWriteNset(lines,`N_ALL_${partName}`,nodeIds);
-      partInfos.push({partName,nodeIds,elemIds,fixed,free:nodeIds.filter(id=>!fixed.includes(id)), mat, mesh});
-      nodeOffset+=mesh.nodes.length;
-      elemOffset+=mesh.elements.length;
+    function __ffFriction(o) {
+        const k = o.userData.engineeringMaterial?.key;
+        return FRICTION_BY_MAT[k] ?? .42;
     }
-
-    lines.push("**");
-    lines.push("*BOUNDARY");
-    for(const p of partInfos) lines.push(`N_FIXED_${p.partName}, 1, 3, 0.`);
-    lines.push("*STEP,NAME=STATIC_LINEAR,NLGEOM=NO");
-    lines.push("*STATIC");
-    lines.push("1.,1.,1e-05,1.");
-    for(const p of partInfos){
-      lines.push(`*DLOAD`);
-      lines.push(`E_${p.partName}, GRAV, ${__ffFmt(g)}, 0., -1., 0.`);
-      if(extra>0 && p.free.length){
-        const f=-extra/partInfos.length/p.free.length;
-        lines.push("*CLOAD");
-        for(const id of p.free) lines.push(`${id}, 2, ${__ffFmt(f)}`);
-      }
-    }
-    lines.push("*NODE FILE");
-    lines.push("U");
-    lines.push("*EL FILE");
-    lines.push("S,E");
-    lines.push("*END STEP");
-    const blob=new Blob([lines.join("\n")+"\n"],{type:"text/plain"});
-    da(blob,__ffSafeName(title)+"_calculix_like.inp");
-    const result=$$("#fem-result");
-    if(result) result.textContent="CalculiX/Abaqus風INPを出力しました。外部ソルバーで再解析してください。";
-    X1("INPファイルを保存しました");
-  }
-
-  function __ffInvMass(s){return s&&Number.isFinite(s.mass)&&s.mass>0?1/s.mass:0}
-  function __ffInvInertia(s){return s&&Number.isFinite(s.inertia)&&s.inertia>1e-9?1/s.inertia:0}
-  function __ffBodyCenter(o){
-    o.updateMatrixWorld(true);const pos=o.geometry.attributes.position,idx=o.geometry.index;
-    if(!pos)return new K1().setFromObject(o).getCenter(new A);
-    let volume=0;const centroid=new A(),a=new A(),b=new A(),c=new A();
-    const add=(ia,ib,ic)=>{a.fromBufferAttribute(pos,ia).applyMatrix4(o.matrixWorld);b.fromBufferAttribute(pos,ib).applyMatrix4(o.matrixWorld);c.fromBufferAttribute(pos,ic).applyMatrix4(o.matrixWorld);const v=a.dot(b.clone().cross(c))/6;volume+=v;centroid.addScaledVector(a.clone().add(b).add(c),v/4);};
-    const count=idx?idx.count:pos.count;for(let i=0;i<count;i+=3)add(idx?idx.getX(i):i,idx?idx.getX(i+1):i+1,idx?idx.getX(i+2):i+2);
-    return Math.abs(volume)>1e-9?centroid.multiplyScalar(1/volume):new K1().setFromObject(o).getCenter(new A);
-  }
-  function __ffBodyRadius(o){
-    o.geometry.computeBoundingSphere();
-    const sc=Math.max(Math.abs(o.scale.x),Math.abs(o.scale.y),Math.abs(o.scale.z));
-    return (o.geometry.boundingSphere?.radius||1)*sc;
-  }
-
-  __ff.showForces=false;
-  __ff.contactEvents=new Map();
-  __ff.forceVisuals=[];
-  function __ffSetForceMode(on,immediate){
-    __ff.showForces=!!on;
-    const fb=document.getElementById("sim-force-toggle");
-    if(fb){fb.classList.toggle("force-on",__ff.showForces);fb.textContent=`力の矢印：${__ff.showForces?"ON":"OFF"}`;}
-    if(!__ff.showForces){__ffClearForceVisuals();__ff.contactEvents.clear();return;}
-    if(immediate){if(!D3)Qx();__ffUpdateForceVisuals();__ffUpdateForceLabels();}
-  }
-  function __ffClearForceVisuals(){
-    for(const v of __ff.forceVisuals){c2.remove(v.line);c2.remove(v.head);c2.remove(v.dot);v.line.geometry.dispose();v.line.material.dispose();v.head.geometry.dispose();v.head.material.dispose();v.dot.geometry.dispose();v.dot.material.dispose();v.label.remove();}
-    __ff.forceVisuals.length=0;
-  }
-  function __ffForceColor(hex){return typeof hex==="number"?hex:parseInt(String(hex).replace("#",""),16)}
-  function __ffDrawForce(start,dir,newtons,label,color){
-    if(!Number.isFinite(newtons)||newtons<1e-5||dir.lengthSq()<1e-12)return;
-    const u=dir.clone().normalize(),length=Math.max(8,Math.min(38,9+6*Math.log10(1+newtons))),end=start.clone().addScaledVector(u,length),headLen=Math.min(5.5,length*.3),shaftLen=Math.max(2,length-headLen*.72),hex=__ffForceColor(color),material=()=>new r3({color:hex,depthTest:false});
-    const line=new E1(new V2(.65,.65,shaftLen,10),material());line.position.copy(start).addScaledVector(u,shaftLen/2);line.quaternion.setFromUnitVectors(new A(0,1,0),u);line.renderOrder=50;
-    const head=new E1(new Yt(1.9,headLen,12),material());head.position.copy(end).addScaledVector(u,-headLen/2);head.quaternion.setFromUnitVectors(new A(0,1,0),u);head.renderOrder=51;
-    const dot=new E1(new X4(1.95,16,10),material());dot.position.copy(start);dot.renderOrder=52;
-    const el=document.createElement("div");el.className="force-label";el.style.color=`#${hex.toString(16).padStart(6,"0")}`;el.textContent=`${label} ${newtons.toFixed(newtons<10?2:1)} N`;
-    const p=end.clone().project(j1);el.style.left=`${(p.x+1)*r4.clientWidth/2}px`;el.style.top=`${(1-p.y)*r4.clientHeight/2}px`;
-    r4.appendChild(el);c2.add(line,head,dot);__ff.forceVisuals.push({line,head,dot,label:el,anchor:end.clone()});
-  }
-  function __ffUpdateForceLabels(){
-    for(const v of __ff.forceVisuals){
-      const p=v.anchor.clone().project(j1),visible=p.z>=-1&&p.z<=1;
-      v.label.style.display=visible?"block":"none";
-      if(visible){v.label.style.left=`${(p.x+1)*r4.clientWidth/2}px`;v.label.style.top=`${(1-p.y)*r4.clientHeight/2}px`;}
-    }
-  }
-  function __ffRememberContact(a,b,n,point,impulse){
-    if(impulse<=0)return;
-    const force=impulse/Math.max(__ff.stepDt||.001,1e-6)/1000;
-    const key=b?[a.userData.id,b.userData.id].sort().join(":"):`ground:${a.userData.id}`;
-    __ff.contactEvents.set(key,{a,b,normal:n.clone(),point:point.clone(),force,expires:performance.now()+500});
-  }
-  function __ffUpdateForceVisuals(){
-    __ffClearForceVisuals();if(!__ff.showForces)return;
-    const g=($$("#sim-gravity")?.value==="moon"?1.62:9.80665);
-    for(const o of F3()){const st=J2.get(o);if(!st)continue;__ffDrawForce(__ffBodyCenter(o),new A(0,-1,0),Math.max(0,st.mass||0)*g,"重力",0x2468e8);}
-    const now=performance.now();
-    for(const [key,c] of __ff.contactEvents){
-      if(c.expires<now||!c.a.parent||(c.b&&!c.b.parent)){__ff.contactEvents.delete(key);continue;}
-      if(c.b){__ffDrawForce(c.point,c.normal,c.force,"作用",0xe63b32);__ffDrawForce(c.point,c.normal.clone().negate(),c.force,"反作用",0x13a05f);}
-      else{const p=__ffBodyCenter(c.a);p.y=0;__ffDrawForce(p,c.normal,c.force,"床反力",0x13a05f);}
-    }
-  }
-
-  function __ffVelAt(o,s,point){
-    const c=__ffBodyCenter(o),r=point.clone().sub(c);
-    return s.velocity.clone().add(s.angular.clone().cross(r));
-  }
-
-  function __ffApplyContact(a,b,n,pen,point,mu,rest){
-    const sa=J2.get(a), sb=b?J2.get(b):null;
-    if(!sa) return;
-    const invA=__ffInvMass(sa), invB=__ffInvMass(sb);
-    const invSum=invA+invB;
-    if(invSum<=0) return;
-
-    const slop=.02, percent=.78;
-    const corr=Math.max(0,pen-slop)*percent/invSum;
-    if(invA>0) a.position.addScaledVector(n,corr*invA);
-    if(b&&invB>0) b.position.addScaledVector(n,-corr*invB);
-
-    const ca=__ffBodyCenter(a), cb=b?__ffBodyCenter(b):point.clone();
-    const ra=point.clone().sub(ca), rb=b?point.clone().sub(cb):new A();
-    const va=sa.velocity.clone().add(sa.angular.clone().cross(ra));
-    const vb=sb?sb.velocity.clone().add(sb.angular.clone().cross(rb)):new A();
-    const rv=va.sub(vb);
-    const vn=rv.dot(n);
-    let normalImpulse=0;
-    if(vn<0){
-      const ia=__ffInvInertia(sa), ib=__ffInvInertia(sb);
-      const raN=ra.clone().cross(n), rbN=rb.clone().cross(n);
-      const denom=invSum+ia*raN.lengthSq()+ib*rbN.lengthSq();
-      const j=-(1+rest)*vn/Math.max(denom,1e-12);
-      normalImpulse=j;
-      const impulse=n.clone().multiplyScalar(j);
-      if(invA>0){
-        sa.velocity.addScaledVector(impulse,invA);
-        sa.angular.addScaledVector(ra.clone().cross(impulse),ia);
-      }
-      if(sb&&invB>0){
-        sb.velocity.addScaledVector(impulse,-invB);
-        sb.angular.addScaledVector(rb.clone().cross(impulse),-ib);
-      }
-
-      const rv2=(__ffVelAt(a,sa,point)).sub(sb?__ffVelAt(b,sb,point):new A());
-      const tangent=rv2.addScaledVector(n,-rv2.dot(n));
-      const tl=tangent.length();
-      if(tl>1e-8){
-        tangent.multiplyScalar(1/tl);
-        const raT=ra.clone().cross(tangent), rbT=rb.clone().cross(tangent);
-        const denomT=invSum+ia*raT.lengthSq()+ib*rbT.lengthSq();
-        let jt=-rv2.dot(tangent)/Math.max(denomT,1e-12);
-        const maxF=mu*j;
-        jt=Math.max(-maxF,Math.min(maxF,jt));
-        const fimp=tangent.multiplyScalar(jt);
-        if(invA>0){
-          sa.velocity.addScaledVector(fimp,invA);
-          sa.angular.addScaledVector(ra.clone().cross(fimp),ia);
+    function __ffGeoArrays(o) {
+        const g = o.geometry, pos = g.attributes.position;
+        const sx = o.scale.x, sy = o.scale.y, sz = o.scale.z;
+        const verts = new Float64Array(pos.count * 3);
+        for (let i = 0; i < pos.count; i++) {
+            verts[i * 3] = pos.getX(i) * sx;
+            verts[i * 3 + 1] = pos.getY(i) * sy;
+            verts[i * 3 + 2] = pos.getZ(i) * sz;
         }
-        if(sb&&invB>0){
-          sb.velocity.addScaledVector(fimp,-invB);
-          sb.angular.addScaledVector(rb.clone().cross(fimp),-ib);
+        let indices = null;
+        if (g.index) indices = Uint32Array.from(g.index.array);
+        return { verts, indices };
+    }
+    function __ffMakeBody(o, id) {
+        const { verts, indices } = __ffGeoArrays(o);
+        o.geometry.computeBoundingSphere();
+        const radius = (o.geometry.boundingSphere?.radius || 1) *
+            Math.max(Math.abs(o.scale.x), Math.abs(o.scale.y), Math.abs(o.scale.z));
+        const body = FF2.createBody({
+            verts, indices,
+            density: o.userData.engineeringMaterial?.density || 1240,
+            kind: o.userData.type === "sphere" ? "sphere" : "mesh",
+            radius,
+            convex: !NONCONVEX_TYPES.has(o.userData.type),
+            friction: __ffFriction(o),
+            restitution: Kx(o),
+            id
+        });
+        __ffSyncBodyFromObject(body, o);
+        return body;
+    }
+    function __ffSyncBodyFromObject(body, o) {
+        body.q[0] = o.quaternion.x; body.q[1] = o.quaternion.y;
+        body.q[2] = o.quaternion.z; body.q[3] = o.quaternion.w;
+        FF2.updateBodyFrame(body);
+        // world COM = obj.position + R * comLocal
+        const c = FF2.v3();
+        FF2.m3MulV(c, body.R, body.comLocal);
+        body.x[0] = o.position.x + c[0];
+        body.x[1] = o.position.y + c[1];
+        body.x[2] = o.position.z + c[2];
+        body._sync = [o.position.x, o.position.y, o.position.z, o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w];
+    }
+    function __ffSyncObjectFromBody(o, body) {
+        const c = FF2.v3();
+        FF2.m3MulV(c, body.R, body.comLocal);
+        o.position.set(body.x[0] - c[0], body.x[1] - c[1], body.x[2] - c[2]);
+        o.quaternion.set(body.q[0], body.q[1], body.q[2], body.q[3]);
+        body._sync = [o.position.x, o.position.y, o.position.z, o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w];
+    }
+    function __ffObjectMoved(body, o) {
+        const s = body._sync;
+        if (!s) return true;
+        return Math.abs(s[0] - o.position.x) + Math.abs(s[1] - o.position.y) + Math.abs(s[2] - o.position.z) > 1e-3 ||
+            Math.abs(s[3] - o.quaternion.x) + Math.abs(s[4] - o.quaternion.y) + Math.abs(s[5] - o.quaternion.z) + Math.abs(s[6] - o.quaternion.w) > 1e-5;
+    }
+
+    /* rebuild simulation world (replaces the old Qx body init).
+       NOTE: the legacy Zx() separated objects by AABB overlap, which teleported
+       a box resting on a wedge slope sideways at sim start. We instead resolve
+       real mesh interpenetration positionally after building the bodies. */
+    Qx = function() {
+        J2.clear();
+        __world = FF2.createWorld();
+        __bodyByObj = new Map();
+        let id = 0;
+        for (const o of F3()) {
+            const body = __ffMakeBody(o, id++);
+            __world.bodies.push(body);
+            __bodyByObj.set(o, body);
+            // mirror state kept for UI code that reads J2 (mass display, reset, ...)
+            J2.set(o, {
+                velocity: new A(), angular: new A(),
+                mass: body.mass,
+                inertia: (body.Ilocal[0] + body.Ilocal[4] + body.Ilocal[8]) / 3,
+                radius: body.boundR,
+                size: new K1().setFromObject(o).getSize(new A()),
+                restitution: body.restitution,
+                ff2: body
+            });
         }
-      }
+        FF2.settleOverlaps(__world);
+        for (const [o, b] of __bodyByObj) __ffSyncObjectFromBody(o, b);
+        __ffClearHistory();
+        __ffSnapshot();
+        __ff.lastSnapT = 0;
+        D3 = F3().map(e => ({ o: e, position: e.position.clone(), quaternion: e.quaternion.clone() }));
+        Z7();
+        V("#sim-reset").disabled = !1;
+        V("#sim-pause").disabled = !1;
+    };
+
+    /* main stepping — replaces every legacy B3 wrapper chain.
+       Wrapped in try/catch: Ca's rAF loop has no guard, so a single exception
+       here would freeze the whole simulation. On error we skip the frame,
+       report the message on screen and keep running. */
+    B3 = function(dt) {
+        try {
+            __ffStep(dt);
+        } catch (err) {
+            console.error("FF2 step failed:", err);
+            const st = $$("#sim-state");
+            if (st) st.innerHTML = `<span style="color:#c0392b">物理エンジンエラー: ${String(err && err.message || err).slice(0, 120)}</span>`;
+            __ff.acc = 0;
+        }
+    };
+    function __ffStep(dt) {
+        if (!D3 || !__world) Qx();
+        // environment
+        const moon = $$("#sim-gravity")?.value === "moon";
+        const fluid = $$("#sim-fluid")?.value || "air";
+        const ground = U8?.[$$("#ground-type")?.value] || { friction: .35, hardness: 20 };
+        __world.gravity = (moon ? 1.62 : 9.80665) * 1000;
+        __world.drag = fluid === "water" ? 2.2 : .035;
+        __world.angDrag = fluid === "water" ? 3.5 : .32;
+        __world.groundRestitutionCap = ground.hardness > 1000 ? .8 : .22;
+        __world.rollingResistance = ({ grass: .018, soil: .015, wood: .006, concrete: .004, ice: .0008 })[$$("#ground-type")?.value] ?? .01;
+        // membership / external moves
+        const objs = F3();
+        if (objs.length !== __world.bodies.length || objs.some(o => !__bodyByObj.has(o))) {
+            const oldStates = new Map();
+            for (const [o, b] of __bodyByObj) oldStates.set(o, b);
+            __world.bodies.length = 0;
+            const nb = new Map();
+            let id = 0;
+            for (const o of objs) {
+                let b = oldStates.get(o);
+                if (!b) b = __ffMakeBody(o, id);
+                b.id = id++;
+                __world.bodies.push(b);
+                nb.set(o, b);
+                if (!J2.has(o)) J2.set(o, {
+                    velocity: new A(), angular: new A(), mass: b.mass,
+                    inertia: (b.Ilocal[0] + b.Ilocal[4] + b.Ilocal[8]) / 3,
+                    radius: b.boundR, size: new K1().setFromObject(o).getSize(new A()),
+                    restitution: b.restitution, ff2: b
+                });
+            }
+            __bodyByObj = nb;
+            __world.warmCache.clear();
+        }
+        for (const o of objs) {
+            const b = __bodyByObj.get(o);
+            if (!b) continue;
+            if (__ffObjectMoved(b, o)) { // object was moved outside the solver
+                const sdt = b._sync;
+                const dPos = sdt ? Math.abs(sdt[0] - o.position.x) + Math.abs(sdt[1] - o.position.y) + Math.abs(sdt[2] - o.position.z) : 1e9;
+                const dQuat = sdt ? Math.abs(sdt[3] - o.quaternion.x) + Math.abs(sdt[4] - o.quaternion.y) + Math.abs(sdt[5] - o.quaternion.z) + Math.abs(sdt[6] - o.quaternion.w) : 1e9;
+                if (!ye || dPos > 2 || dQuat > .02) {
+                    // real teleport (user drag / reset): adopt it
+                    b._adoptCount = (b._adoptCount || 0) + 1;
+                    __ffSyncBodyFromObject(b, o);
+                    if (!ye) { // start from rest only for drags while paused
+                        FF2.vset(b.v, 0, 0, 0);
+                        FF2.vset(b.w, 0, 0, 0);
+                    }
+                    FF2.wake(b);
+                } else {
+                    // sub-2mm external nudge while running (legacy clamps etc.):
+                    // ignore — the solver overwrites the object in write-back
+                    b._nudgeCount = (b._nudgeCount || 0) + 1;
+                }
+            }
+            const rho = o.userData.engineeringMaterial?.density || 1240;
+            b.buoyancy = fluid === "water" ? Math.max(-0.35, 1 - 1000 / Math.max(rho, 1)) : 1;
+            b.groundFriction = ground.friction;
+            b.friction = __ffFriction(o);
+            b.restitution = Kx(o);
+        }
+        // fixed-timestep accumulator (240 Hz): identical dt sequence every run
+        // → replays after 元の位置 are deterministic regardless of frame timing
+        const h = 1 / 240;
+        __ff.acc = Math.min((__ff.acc || 0) + dt, .06);
+        __ff.stepDt = h;
+        let steps = 0;
+        while (__ff.acc >= h && steps < 14) {
+            __ffApplySprings(h);
+            FF2.stepWorld(__world, h);
+            __ff.simT += h;
+            if (__ff.simT - (__ff.lastSnapT ?? -1) >= .1) {
+                __ffSnapshot();
+                __ff.lastSnapT = __ff.simT;
+            }
+            if (__ff.showForces) {
+                try { __ffHarvestContacts(h); } catch (err) { console.error("FF2 harvest failed:", err); }
+            }
+            __ff.acc -= h;
+            steps++;
+        }
+        if (!steps) return;
+        // write back
+        for (const o of objs) {
+            const b = __bodyByObj.get(o);
+            if (!b) continue;
+            __ffSyncObjectFromBody(o, b);
+            const st = J2.get(o);
+            if (st) {
+                st.velocity.set(b.v[0], b.v[1], b.v[2]);
+                st.angular.set(b.w[0], b.w[1], b.w[2]);
+            }
+        }
+        if (__ff.showForces) {
+            try { __ffUpdateForceVisuals(); } catch (err) {
+                console.error("FF2 force visuals failed:", err);
+                __ffSetForceMode(false, false);
+            }
+        }
+        // ---- self-diagnosis (unconditional): console dump + on-panel line so
+        // the state is visible in any screenshot
+        __ff.diagTick = (__ff.diagTick || 0) + 1;
+        if (__ff.diagTick % 45 === 0) {
+            try {
+                let panelNote = "";
+                for (const o of objs) {
+                    const b = __bodyByObj.get(o);
+                    if (!b) continue;
+                    const box = new K1().setFromObject(o);
+                    const cts = (__world.contactEvents || []).filter(ev => ev.a === b || ev.b === b);
+                    const line = {
+                        type: o.userData.type, kind: b.kind, r: +(+b.radius || 0).toFixed(1),
+                        minY: +box.min.y.toFixed(1), v: +FF2.vlen(b.v).toFixed(1),
+                        w: +FF2.vlen(b.w).toFixed(2), slp: b.sleeping, st: +b.sleepTime.toFixed(2),
+                        adopt: b._adoptCount || 0, nudge: b._nudgeCount || 0,
+                        cts: cts.map(ev => `${ev.b ? "pair" : "gnd"} ny=${ev.n[1].toFixed(2)} F=${(ev.forceN / 1000).toFixed(2)}`)
+                    };
+                    console.log("FF2 DIAG", JSON.stringify(line));
+                    // panel: report the most suspicious body (floating & slow)
+                    if (!panelNote && box.min.y > 2 && FF2.vlen(b.v) < 12) {
+                        panelNote = `診断: ${o.userData.type}/${b.kind} v=${FF2.vlen(b.v).toFixed(1)} 浮遊${box.min.y.toFixed(0)}mm 睡眠${b.sleeping ? "○" : "×"}(${b.sleepTime.toFixed(1)}s) 採用${b._adoptCount || 0}/nudge${b._nudgeCount || 0} 接触[${line.cts.join(" ")}]`;
+                    }
+                }
+                __ff.panelDiag = panelNote;
+            } catch (e) {}
+        }
+        const s = $$("#sim-state");
+        if (s && ye) s.innerHTML = `実行中・${$$("#sim-fluid option:checked")?.textContent||""}・${$$("#sim-gravity option:checked")?.textContent||""}<span class="contact-note">逐次インパルス＋位置補正（固定240Hz・${FF2_VERSION}）${__ff.panelDiag ? `<br>${__ff.panelDiag}` : ""}</span>`;
+    };
+
+    /* ---------------- rewind history (0.1 s snapshots) ---------------- */
+    function __ffClearHistory() {
+        __ff.history.length = 0;
+        __ff.simT = 0;
+        __ff.lastSnapT = -1;
     }
-    __ffRememberContact(a,b,n,point,normalImpulse);
-  }
-
-  function __ffOBB(o){
-    o.geometry.computeBoundingBox();
-    const bb=o.geometry.boundingBox, localCenter=bb.getCenter(new A), localSize=bb.getSize(new A).multiplyScalar(.5);
-    const center=localCenter.clone().applyMatrix4(o.matrixWorld);
-    const e=o.matrixWorld.elements;
-    const axes=[
-      new A(e[0],e[1],e[2]),
-      new A(e[4],e[5],e[6]),
-      new A(e[8],e[9],e[10])
-    ];
-    const half=[localSize.x,localSize.y,localSize.z];
-    for(let i=0;i<3;i++){
-      const len=Math.max(axes[i].length(),1e-9);
-      axes[i].multiplyScalar(1/len);
-      half[i]*=len;
+    function __ffSnapshot() {
+        const states = [];
+        for (const [o, b] of __bodyByObj)
+            states.push([o, Float64Array.from([
+                b.x[0], b.x[1], b.x[2],
+                b.q[0], b.q[1], b.q[2], b.q[3],
+                b.v[0], b.v[1], b.v[2],
+                b.w[0], b.w[1], b.w[2]
+            ])]);
+        __ff.history.push({ t: __ff.simT, states });
+        if (__ff.history.length > 120) __ff.history.shift(); // ~12 s window
     }
-    return {center,axes,half};
-  }
-
-  function __ffProjRadius(obb,axis){
-    return Math.abs(axis.dot(obb.axes[0]))*obb.half[0]+Math.abs(axis.dot(obb.axes[1]))*obb.half[1]+Math.abs(axis.dot(obb.axes[2]))*obb.half[2];
-  }
-
-  function __ffOBBSupport(obb,dir){
-    const p=obb.center.clone();
-    for(let i=0;i<3;i++)p.addScaledVector(obb.axes[i],obb.half[i]*(dir.dot(obb.axes[i])>=0?1:-1));
-    return p;
-  }
-
-  function __ffOBBContact(a,b){
-    const Aobb=__ffOBB(a), Bobb=__ffOBB(b), d=Bobb.center.clone().sub(Aobb.center);
-    const axes=[...Aobb.axes,...Bobb.axes];
-    for(let i=0;i<3;i++)for(let j=0;j<3;j++){
-      const ax=Aobb.axes[i].clone().cross(Bobb.axes[j]);
-      if(ax.lengthSq()>1e-10) axes.push(ax.normalize());
+    function __ffRewind() {
+        if (!__ff.history.length || !__world) return;
+        if (ye) { c9(); __ffUpdatePlayBtn(); }
+        // restore the newest snapshot at least 0.1s older than "now"
+        let idx = __ff.history.length - 1;
+        while (idx > 0 && __ff.history[idx].t > __ff.simT - .0999) idx--;
+        const snap = __ff.history[idx];
+        __ff.history.length = idx + 1; // truncate the future
+        for (const [o, st] of snap.states) {
+            const b = __bodyByObj.get(o);
+            if (!b) continue;
+            b.x[0] = st[0]; b.x[1] = st[1]; b.x[2] = st[2];
+            b.q[0] = st[3]; b.q[1] = st[4]; b.q[2] = st[5]; b.q[3] = st[6];
+            b.v[0] = st[7]; b.v[1] = st[8]; b.v[2] = st[9];
+            b.w[0] = st[10]; b.w[1] = st[11]; b.w[2] = st[12];
+            b.sleeping = false; b.sleepTime = 0;
+            FF2.updateBodyFrame(b);
+            __ffSyncObjectFromBody(o, b);
+        }
+        __ff.simT = snap.t;
+        __ff.lastSnapT = snap.t;
+        A7 = snap.t;
+        __world.warmCache.clear();
+        __ff.acc = 0;
+        const el = $$("#sim-elapsed");
+        if (el) el.textContent = `${snap.t.toFixed(1)}秒`;
+        const stt = $$("#sim-state");
+        if (stt) stt.textContent = `${snap.t.toFixed(1)}秒へ巻き戻しました`;
     }
-    let bestPen=1/0,bestAxis=null;
-    for(const axis0 of axes){
-      const axis=axis0.clone().normalize();
-      const dist=d.dot(axis), ra=__ffProjRadius(Aobb,axis), rb=__ffProjRadius(Bobb,axis);
-      const pen=ra+rb-Math.abs(dist);
-      if(pen<=0) return null;
-      if(pen<bestPen){
-        bestPen=pen;
-        bestAxis=axis.multiplyScalar(dist>=0?-1:1); // B -> A
-      }
+    /* ---------------- spring (constant-force) devices ------------------ */
+    const SPRING_RANGE = 35; // mm activation radius
+    function __ffBeginSpringPlacement() {
+        const hint = document.getElementById("ff-spring-hint");
+        if (hint) hint.style.display = "block";
+        const onClick = (ev) => {
+            a2.removeEventListener("pointerdown", onClick, true);
+            if (hint) hint.style.display = "none";
+            ev.stopPropagation();
+            const r = a2.getBoundingClientRect();
+            const nx = ((ev.clientX - r.left) / r.width) * 2 - 1;
+            const nyc = -((ev.clientY - r.top) / r.height) * 2 + 1;
+            const p0 = new A(nx, nyc, -1).unproject(j1);
+            const p1 = new A(nx, nyc, 1).unproject(j1);
+            const dir = p1.clone().sub(p0);
+            if (Math.abs(dir.y) < 1e-9) return;
+            const t = -p0.y / dir.y; // ground plane y=0
+            if (t < 0) return;
+            const hit = p0.clone().addScaledVector(dir, t);
+            __ffAddSpring(hit.x, hit.z);
+        };
+        a2.addEventListener("pointerdown", onClick, true);
     }
-    const point=__ffOBBSupport(Aobb,bestAxis.clone().negate()).add(__ffOBBSupport(Bobb,bestAxis)).multiplyScalar(.5);
-    return {normal:bestAxis, penetration:bestPen, point};
-  }
-
-  function __ffSphereSphere(a,b){
-    const ca=a.getWorldPosition(new A), cb=b.getWorldPosition(new A);
-    const ra=__ffBodyRadius(a), rb=__ffBodyRadius(b), n=ca.clone().sub(cb);
-    const dist=n.length();
-    if(dist>=ra+rb) return null;
-    if(dist<1e-8) n.set(0,1,0); else n.multiplyScalar(1/dist);
-    return {normal:n, penetration:ra+rb-dist, point:cb.clone().addScaledVector(n,rb)};
-  }
-
-  function __ffSphereMesh(sphere,mesh){
-    const cs=sphere.getWorldPosition(new A), rs=__ffBodyRadius(sphere);
-    const pos=mesh.geometry.attributes.position, idx=mesh.geometry.index, tri=new m2, tmp=new A();
-    mesh.updateMatrixWorld(true);
-    let best=1/0, p=null;
-    const ntri=idx?idx.count:pos.count;
-    for(let i=0;i<ntri;i+=3){
-      const ids=idx?[idx.getX(i),idx.getX(i+1),idx.getX(i+2)]:[i,i+1,i+2];
-      tri.a.fromBufferAttribute(pos,ids[0]).applyMatrix4(mesh.matrixWorld);
-      tri.b.fromBufferAttribute(pos,ids[1]).applyMatrix4(mesh.matrixWorld);
-      tri.c.fromBufferAttribute(pos,ids[2]).applyMatrix4(mesh.matrixWorld);
-      tri.closestPointToPoint(cs,tmp);
-      const d2=tmp.distanceToSquared(cs);
-      if(d2<best){best=d2;p=tmp.clone()}
+    function __ffAddSpring(x, z) {
+        const sp = {
+            id: (__ff.springs.at(-1)?.id || 0) + 1,
+            x, y: 6, z,
+            dir: [1, 0, 0],
+            forceN: 1,
+            meshes: []
+        };
+        __ffSpringVisual(sp);
+        __ff.springs.push(sp);
+        __ffRenderSpringList();
+        X1(`バネ装置 #${sp.id} を設置しました`);
     }
-    if(!p || best>=rs*rs) return null;
-    const d=Math.sqrt(Math.max(best,1e-12));
-    const n=cs.clone().sub(p).multiplyScalar(1/d);
-    return {normal:n, penetration:rs-d, point:p};
-  }
-
-  function __ffPairContact(a,b){
-    const ba=new K1().setFromObject(a), bb=new K1().setFromObject(b);
-    if(!ba.intersectsBox(bb)) return null;
-    const sa=a.userData.type==="sphere", sb=b.userData.type==="sphere";
-    if(sa&&sb) return __ffSphereSphere(a,b);
-    if(sa&&!sb) return __ffSphereMesh(a,b);
-    if(!sa&&sb){
-      const c=__ffSphereMesh(b,a);
-      if(!c) return null;
-      c.normal.multiplyScalar(-1); // convert to B -> A where A is first argument
-      return c;
+    function __ffSpringVisual(sp) {
+        for (const m of sp.meshes) { c2.remove(m); m.geometry.dispose(); m.material.dispose(); }
+        sp.meshes.length = 0;
+        const mat = () => new r3({ color: 0xf1c40f });
+        const base = new E1(new V2(6, 6, 8, 14), mat());
+        base.position.set(sp.x, 4, sp.z);
+        const coil = new E1(new V2(3.2, 3.2, 10, 10), mat());
+        coil.position.set(sp.x + sp.dir[0] * 8, 6 + sp.dir[1] * 8, sp.z + sp.dir[2] * 8);
+        coil.quaternion.setFromUnitVectors(new A(0, 1, 0), new A(sp.dir[0], sp.dir[1], sp.dir[2]));
+        const tip = new E1(new Yt(4.5, 8, 12), mat());
+        tip.position.set(sp.x + sp.dir[0] * 16, 6 + sp.dir[1] * 16, sp.z + sp.dir[2] * 16);
+        tip.quaternion.copy(coil.quaternion);
+        for (const m of [base, coil, tip]) { m.renderOrder = 40; c2.add(m); sp.meshes.push(m); }
     }
-    return __ffOBBContact(a,b);
-  }
-
-  function __ffGroundContact(o,ground){
-    const box=new K1().setFromObject(o);
-    if(box.min.y>=0) return;
-    o.updateMatrixWorld(true);
-    const pos=o.geometry.attributes.position,tmp=new A(),low=[];
-    let minY=Infinity;
-    for(let i=0;i<pos.count;i++){tmp.fromBufferAttribute(pos,i).applyMatrix4(o.matrixWorld);if(tmp.y<minY-.08){minY=tmp.y;low.length=0;low.push(tmp.clone());}else if(tmp.y<=minY+.08)low.push(tmp.clone());}
-    const point=low.reduce((sum,p)=>sum.add(p),new A()).multiplyScalar(1/Math.max(1,low.length));point.y=0;
-    const st=J2.get(o);
-    const rest=Math.min(st?.restitution??.32, ground.hardness>1000?.28:.12);
-    __ffApplyContact(o,null,new A(0,1,0),-box.min.y,point,ground.friction,rest);
-  }
-
-  function __ffIntegrate(dt){
-    const fluid=$$("#sim-fluid")?.value||"air";
-    const g=($$("#sim-gravity")?.value==="moon"?1.62:9.80665)*1000;
-    const drag=fluid==="water"?2.2:.035;
-    for(const o of F3()){
-      const st=J2.get(o);
-      if(!st || __ffInvMass(st)===0) continue;
-      const rho=o.userData.engineeringMaterial?.density||1240;
-      const buoy=fluid==="water" ? 1-1000/Math.max(rho,1) : 1;
-      st.velocity.y-=g*buoy*dt;
-      st.velocity.multiplyScalar(Math.exp(-drag*dt));
-      st.angular.multiplyScalar(Math.exp(-(fluid==="water"?3.5:.32)*dt));
-      o.position.addScaledVector(st.velocity,dt);
-      const av=st.angular.length();
-      if(av>1e-8){
-        o.quaternion.premultiply(new N2().setFromAxisAngle(st.angular.clone().multiplyScalar(1/av),av*dt));
-        o.quaternion.normalize();
-      }
+    function __ffRenderSpringList() {
+        const list = document.getElementById("ff-spring-list");
+        if (!list) return;
+        list.innerHTML = __ff.springs.map(sp => `
+          <div data-spring="${sp.id}" style="display:grid;grid-template-columns:22px 1fr 1fr 26px;gap:4px;align-items:center;margin-top:5px">
+            <b>#${sp.id}</b>
+            <label style="display:flex;gap:3px;align-items:center">力<input data-sf type="number" min="0" step="0.1" value="${sp.forceN}" style="width:100%;font-size:9px;padding:2px">N</label>
+            <select data-sd style="font-size:9px;padding:2px">
+              <option value="1,0,0"${sp.dir[0] === 1 ? " selected" : ""}>+X</option>
+              <option value="-1,0,0"${sp.dir[0] === -1 ? " selected" : ""}>−X</option>
+              <option value="0,0,1"${sp.dir[2] === 1 ? " selected" : ""}>+Z</option>
+              <option value="0,0,-1"${sp.dir[2] === -1 ? " selected" : ""}>−Z</option>
+              <option value="0,1,0"${sp.dir[1] === 1 ? " selected" : ""}>+Y</option>
+            </select>
+            <button data-sx type="button" style="border:1px solid #cfd0c9;border-radius:5px;background:#f5f5f1;font-size:9px">✕</button>
+          </div>`).join("");
+        list.querySelectorAll("[data-spring]").forEach(row => {
+            const sp = __ff.springs.find(q => q.id === +row.dataset.spring);
+            row.querySelector("[data-sf]").oninput = e => { sp.forceN = Math.max(0, Number(e.target.value) || 0); };
+            row.querySelector("[data-sd]").onchange = e => {
+                sp.dir = e.target.value.split(",").map(Number);
+                __ffSpringVisual(sp);
+            };
+            row.querySelector("[data-sx]").onclick = () => {
+                for (const m of sp.meshes) { c2.remove(m); m.geometry.dispose(); m.material.dispose(); }
+                __ff.springs.splice(__ff.springs.indexOf(sp), 1);
+                __ffRenderSpringList();
+            };
+        });
     }
-  }
-
-  function __ffSolveContacts(){
-    const ground=U8?.[$$("#ground-type")?.value]||{friction:.35,hardness:20};
-    const bodies=F3();
-    for(const o of bodies) __ffGroundContact(o,ground);
-    for(let i=0;i<bodies.length;i++){
-      for(let j=i+1;j<bodies.length;j++){
-        const a=bodies[i], b=bodies[j];
-        const c=__ffPairContact(a,b);
-        if(!c) continue;
-        const sa=J2.get(a), sb=J2.get(b);
-        const mu=Math.min(.9,Math.max(.03,ground.friction*.7+.18));
-        const rest=Math.min(sa?.restitution??.32,sb?.restitution??.32);
-        __ffApplyContact(a,b,c.normal,c.penetration,c.point,mu,rest);
-      }
+    function __ffApplySprings(h) {
+        for (const sp of __ff.springs) {
+            sp._hits = [];
+            if (sp.forceN <= 0) continue;
+            for (const [o, b] of __bodyByObj) {
+                if (b.isStatic) continue;
+                const dx = b.x[0] - sp.x, dy = b.x[1] - sp.y, dz = b.x[2] - sp.z;
+                const reach = SPRING_RANGE + b.boundR;
+                if (dx * dx + dy * dy + dz * dz > reach * reach) continue;
+                FF2.wake(b);
+                const acc = sp.forceN * 1000 / b.mass; // N→mN, /kg → mm/s²
+                b.v[0] += sp.dir[0] * acc * h;
+                b.v[1] += sp.dir[1] * acc * h;
+                b.v[2] += sp.dir[2] * acc * h;
+                sp._hits.push(o);
+            }
+        }
     }
-  }
 
-  const __ffPreviousB3 = B3;
-  B3 = function(dt){
-    if(!D3){ Qx(); }
-    const steps=Math.max(1,Math.min(32,Math.ceil(dt/.0015)));
-    const h=dt/steps;
-    for(let s=0;s<steps;s++){
-      __ff.stepDt=h;
-      __ffIntegrate(h);
-      for(let k=0;k<10;k++) __ffSolveContacts();
+    /* the legacy per-frame ground damping fought the contact solver — off */
+    U_ = function() {};
+
+    /* reset must also reset solver state */
+    const __ffPrevReset = a_;
+    a_ = function() {
+        __ffPrevReset();
+        if (__world) {
+            for (const [o, b] of __bodyByObj) {
+                __ffSyncBodyFromObject(b, o);
+                FF2.vset(b.v, 0, 0, 0);
+                FF2.vset(b.w, 0, 0, 0);
+                b.sleeping = false; b.sleepTime = 0;
+            }
+            __world.warmCache.clear();
+            __ff.contactEvents.clear();
+            __ffClearForceVisuals();
+            __ff.acc = 0;
+        }
+    };
+
+    /* ---------------------------------------------- force visualization ---- */
+    function __ffSetForceMode(on, immediate) {
+        __ff.showForces = !!on;
+        const fb = document.getElementById("sim-force-toggle");
+        if (fb) fb.classList.toggle("force-on", __ff.showForces);
+        if (!__ff.showForces) {
+            __ffClearForceVisuals();
+            __ff.contactEvents.clear();
+            return;
+        }
+        if (immediate) {
+            if (!D3) Qx();
+            __ffUpdateForceVisuals();
+            __ffUpdateForceLabels();
+        }
     }
-    __ffUpdateForceVisuals();
-    for(const o of F3()){
-      const st=J2.get(o);
-      if(!st) continue;
-      if(!Number.isFinite(o.position.lengthSq()) || !Number.isFinite(st.velocity.lengthSq())){
-        const snap=D3?.find(x=>x.o===o);
-        if(snap) o.position.copy(snap.position),o.quaternion.copy(snap.quaternion);
-        st.velocity.set(0,0,0); st.angular.set(0,0,0);
-      }
+    function __ffHarvestContacts(h) {
+        // aggregate per pair: total normal force + force-weighted point
+        const agg = new Map();
+        for (const ev of __world.contactEvents) {
+            const key = ev.b ? `${Math.min(ev.a.id, ev.b.id)}:${Math.max(ev.a.id, ev.b.id)}` : `G:${ev.a.id}`;
+            let e = agg.get(key);
+            if (!e) agg.set(key, e = { a: ev.a, b: ev.b, f: 0, p: [0, 0, 0], n: [0, 0, 0], ft: [0, 0, 0] });
+            e.f += ev.forceN;
+            for (let k = 0; k < 3; k++) {
+                e.p[k] += ev.p[k] * ev.forceN;
+                e.n[k] += ev.n[k] * ev.forceN;
+                if (ev.forceT) e.ft[k] += ev.forceT[k];
+            }
+        }
+        const now = performance.now();
+        for (const [key, e] of agg) {
+            if (e.f <= 0) continue;
+            const inv = 1 / e.f;
+            const oa = [...__bodyByObj].find(([o, b]) => b === e.a)?.[0];
+            const ob = e.b ? [...__bodyByObj].find(([o, b]) => b === e.b)?.[0] : null;
+            if (!oa) continue;
+            __ff.contactEvents.set(key, {
+                a: oa, b: ob,
+                normal: new A(e.n[0] * inv, e.n[1] * inv, e.n[2] * inv).normalize(),
+                point: new A(e.p[0] * inv, e.p[1] * inv, e.p[2] * inv),
+                force: e.f / 1000, // mN → N
+                friction: new A(e.ft[0] / 1000, e.ft[1] / 1000, e.ft[2] / 1000), // N vector
+                expires: now + 500
+            });
+        }
     }
-    const s=$$("#sim-state");
-    if(s && ye) s.innerHTML=`実行中・${$$("#sim-fluid option:checked")?.textContent||""}・${$$("#sim-gravity option:checked")?.textContent||""}<span class="contact-note">接触：サブステップ＋逐次インパルス＋OBB/SAT判定</span>`;
-  };
+    function __ffClearForceVisuals() {
+        for (const v of __ff.forceVisuals) {
+            c2.remove(v.line); c2.remove(v.head); c2.remove(v.dot);
+            v.line.geometry.dispose(); v.line.material.dispose();
+            v.head.geometry.dispose(); v.head.material.dispose();
+            v.dot.geometry.dispose(); v.dot.material.dispose();
+            v.label.remove();
+        }
+        __ff.forceVisuals.length = 0;
+    }
+    function __ffForceColor(hex) {
+        return typeof hex === "number" ? hex : parseInt(String(hex).replace("#", ""), 16);
+    }
+    function __ffDrawForce(start, dir, newtons, label, color, lengthOverride) {
+        if (!Number.isFinite(newtons) || newtons < 1e-5 || dir.lengthSq() < 1e-12) return;
+        const u = dir.clone().normalize(),
+            length = lengthOverride ?? Math.max(8, Math.min(38, 9 + 6 * Math.log10(1 + newtons))),
+            end = start.clone().addScaledVector(u, length),
+            headLen = Math.min(5.5, length * .3),
+            shaftLen = Math.max(2, length - headLen * .72),
+            hex = __ffForceColor(color),
+            material = () => new r3({ color: hex, depthTest: false });
+        const line = new E1(new V2(.65, .65, shaftLen, 10), material());
+        line.position.copy(start).addScaledVector(u, shaftLen / 2);
+        line.quaternion.setFromUnitVectors(new A(0, 1, 0), u);
+        line.renderOrder = 50;
+        const head = new E1(new Yt(1.9, headLen, 12), material());
+        head.position.copy(end).addScaledVector(u, -headLen / 2);
+        head.quaternion.setFromUnitVectors(new A(0, 1, 0), u);
+        head.renderOrder = 51;
+        const dot = new E1(new X4(1.95, 16, 10), material());
+        dot.position.copy(start);
+        dot.renderOrder = 52;
+        const el = document.createElement("div");
+        el.className = "force-label";
+        el.style.color = `#${hex.toString(16).padStart(6, "0")}`;
+        el.textContent = label.includes("rad/s") ? label : `${label} ${newtons.toFixed(newtons < .1 ? 3 : newtons < 10 ? 2 : 1)} N`;
+        const p = end.clone().project(j1);
+        el.style.left = `${(p.x + 1) * r4.clientWidth / 2}px`;
+        el.style.top = `${(1 - p.y) * r4.clientHeight / 2}px`;
+        r4.appendChild(el);
+        c2.add(line, head, dot);
+        __ff.forceVisuals.push({ line, head, dot, label: el, anchor: end.clone() });
+    }
+    function __ffUpdateForceLabels() {
+        for (const v of __ff.forceVisuals) {
+            const p = v.anchor.clone().project(j1),
+                visible = p.z >= -1 && p.z <= 1;
+            v.label.style.display = visible ? "block" : "none";
+            if (visible) {
+                v.label.style.left = `${(p.x + 1) * r4.clientWidth / 2}px`;
+                v.label.style.top = `${(1 - p.y) * r4.clientHeight / 2}px`;
+            }
+        }
+    }
+    function __ffBodyCenterWorld(o) {
+        const box = new K1().setFromObject(o);
+        const b = __bodyByObj.get(o);
+        if (b) {
+            // defense in depth: never draw a force at a COM that escaped the
+            // object's bounding box (broken source mesh, stale body, ...)
+            const inside =
+                b.x[0] >= box.min.x - 1 && b.x[0] <= box.max.x + 1 &&
+                b.x[1] >= box.min.y - 1 && b.x[1] <= box.max.y + 1 &&
+                b.x[2] >= box.min.z - 1 && b.x[2] <= box.max.z + 1;
+            if (inside) return new A(b.x[0], b.x[1], b.x[2]);
+        }
+        return box.getCenter(new A());
+    }
+    function __ffUpdateForceVisuals() {
+        __ffClearForceVisuals();
+        if (!__ff.showForces) return;
+        const g = ($$("#sim-gravity")?.value === "moon" ? 1.62 : 9.80665);
+        // collect all force arrows first, then scale lengths RELATIVE to the
+        // strongest force this frame; drop numerical-noise forces entirely
+        const pending = [];
+        for (const o of F3()) {
+            const b = __bodyByObj.get(o);
+            if (!b) continue;
+            pending.push({ p: __ffBodyCenterWorld(o), d: new A(0, -1, 0), F: b.mass * g, label: "重力", color: 0x2468e8 });
+        }
+        const now = performance.now();
+        for (const [key, c] of __ff.contactEvents) {
+            if (c.expires < now || !c.a.parent || (c.b && !c.b.parent)) {
+                __ff.contactEvents.delete(key);
+                continue;
+            }
+            if (c.b) {
+                pending.push({ p: c.point, d: c.normal, F: c.force, label: "作用", color: 0xe63b32 });
+                pending.push({ p: c.point, d: c.normal.clone().negate(), F: c.force, label: "反作用", color: 0x13a05f });
+            } else {
+                const p = c.point.clone();
+                p.y = 0;
+                pending.push({ p, d: c.normal, F: c.force, label: "床反力", color: 0x13a05f });
+            }
+            // friction acting on the moving body: only when physically meaningful
+            const fl = c.friction?.length() || 0;
+            if (fl > 0) pending.push({ p: c.point, d: c.friction.clone().normalize(), F: fl, label: "摩擦", color: 0xe67e22 });
+        }
+        for (const sp of __ff.springs) {
+            if (!sp._hits?.length || sp.forceN <= 0) continue;
+            for (const o of sp._hits) {
+                const b = __bodyByObj.get(o);
+                if (!b) continue;
+                pending.push({ p: new A(b.x[0], b.x[1], b.x[2]), d: new A(sp.dir[0], sp.dir[1], sp.dir[2]), F: sp.forceN, label: "バネ", color: 0xf1c40f });
+            }
+        }
+        let fMax = 0;
+        for (const a of pending) fMax = Math.max(fMax, a.F);
+        const fMin = Math.max(.004, fMax * .02); // hide noise (<2% of max, <4mN)
+        for (const a of pending) {
+            if (a.F < fMin) continue;
+            const len = 6 + 30 * Math.sqrt(a.F / fMax); // length ∝ √F, relative
+            __ffDrawForce(a.p, a.d, a.F, a.label, a.color, len);
+        }
+        // rotation state (moment axis): ω vector per spinning body
+        for (const o of F3()) {
+            const b = __bodyByObj.get(o);
+            if (!b || b.sleeping) continue;
+            const wLen = FF2.vlen(b.w);
+            if (wLen < .3) continue;
+            const axis = new A(b.w[0] / wLen, b.w[1] / wLen, b.w[2] / wLen);
+            __ffDrawForce(__ffBodyCenterWorld(o), axis, wLen, `回転 ${wLen.toFixed(1)}rad/s`, 0x8e44ad, Math.min(30, 10 + wLen * 1.5));
+        }
+    }
+    const __ffPreviousPa = Pa;
+    Pa = function(time) {
+        __ffUpdateForceLabels();
+        return __ffPreviousPa(time);
+    };
 
-  const __ffPreviousPa=Pa;
-  Pa=function(time){__ffUpdateForceLabels();return __ffPreviousPa(time);};
+    /* =================================================================
+       FEM — CSR sparse Jacobi-PCG solver with C3D4 / C3D10 elements.
+       Replaces the matrix-free fixed-iteration BtDB-CG in J7 / g_ while
+       keeping the same voxel-tet mesher (Ma) and result-display contract:
+       { res, n, b, size, nodeStress, principal, shear, max, ... } indexed
+       on the full (res+1)^3 grid.
+       ================================================================= */
+    function __ffGeoBVHLocal(o) {
+        const g = o.geometry, pos = g.attributes.position, idx = g.index;
+        const n = idx ? idx.count : pos.count;
+        const tris = new Float64Array(n * 3);
+        for (let t = 0; t < n; t++) {
+            const vi = idx ? idx.getX(t) : t;
+            tris[t * 3] = pos.getX(vi);
+            tris[t * 3 + 1] = pos.getY(vi);
+            tris[t * 3 + 2] = pos.getZ(vi);
+        }
+        return FF2.buildBVH(tris);
+    }
+    function __ffFemSolveObject(e, quality, gEff, elemType) {
+        const base = Ma(e, quality);   // voxel-tet mesher (unchanged)
+        const gridN = base.n;
+        const mat = e.userData.engineeringMaterial || O3.pla_basic;
+        const E = Math.max(1, mat.young);
+        const nu = Math.min(.485, Math.max(.01, mat.poisson ?? .3));
+        e.updateMatrixWorld(true);
 
-  const __ffPreviousK6 = K6;
-  K6 = function(){
-    const r=__ffPreviousK6();
-    try{
-      const objs=F3();
-      const q=$$("#fem-mesh")?.value||"standard";
-      const warnings=[];
-      for(const o of objs){
-        const qa=Ta(o,q);
-        if(qa.min<.12) warnings.push(`${o.name||Q8?.[o.userData.type]||"物体"}: 低品質要素 min=${qa.min.toFixed(3)}`);
-        if(qa.volumeError>15) warnings.push(`${o.name||Q8?.[o.userData.type]||"物体"}: メッシュ体積差 ${qa.volumeError.toFixed(1)}%`);
-      }
-      const res=$$("#fem-result");
-      if(res){
-        const note=warnings.length?`／品質警告 ${warnings.length}件：${warnings.slice(0,2).join("、")}`:"／品質簡易監査OK";
-        res.textContent += note + "／設計保証はINP出力後に外部ソルバーで確認";
-      }
-    }catch(err){ console.warn("FEM industrial audit failed",err); }
-    return r;
-  };
+        // node coordinates (world, mm)
+        let pts = base.nodes.map(p => p);      // THREE.Vector3 (world)
+        let conn, edges = null;
+        if (elemType === "C3D10") {
+            const local = base.local.map(p => p.clone());
+            const world = pts.map(p => p.clone());
+            const edgeMap = new Map();
+            edges = [];
+            const bvh = __ffGeoBVHLocal(e);
+            // boundary faces → boundary edges (midside nodes get projected onto
+            // the true surface so curved geometry is captured quadratically)
+            const faceCount = new Map();
+            for (const t of base.tets)
+                for (const f of [[t[0], t[1], t[2]], [t[0], t[1], t[3]], [t[0], t[2], t[3]], [t[1], t[2], t[3]]]) {
+                    const k = [...f].sort((x, y) => x - y).join("|");
+                    faceCount.set(k, (faceCount.get(k) || 0) + 1);
+                }
+            const boundaryEdge = new Set();
+            for (const [k, cnt] of faceCount)
+                if (cnt === 1) {
+                    const f = k.split("|").map(Number);
+                    for (const [a, b] of [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]])
+                        boundaryEdge.add(a < b ? a + "|" + b : b + "|" + a);
+                }
+            const mid = (a, b) => {
+                const k = a < b ? a + "|" + b : b + "|" + a;
+                if (edgeMap.has(k)) return edgeMap.get(k);
+                const i = world.length;
+                const lm = local[a].clone().add(local[b]).multiplyScalar(.5);
+                if (boundaryEdge.has(k)) {
+                    const hit = FF2.bvhClosest(bvh, [lm.x, lm.y, lm.z]);
+                    if (hit) lm.set(hit.point[0], hit.point[1], hit.point[2]);
+                }
+                local.push(lm);
+                world.push(lm.clone().applyMatrix4(e.matrixWorld));
+                edgeMap.set(k, i);
+                edges.push([i, a, b]);
+                return i;
+            };
+            const c10 = [];
+            for (const t of base.tets) {
+                const [a, b, c, d] = t;
+                c10.push(a, b, c, d, mid(a, b), mid(b, c), mid(c, a), mid(a, d), mid(b, d), mid(c, d));
+            }
+            pts = world;
+            conn = Int32Array.from(c10);
+        } else {
+            conn = Int32Array.from(base.tets.flat());
+        }
+        const nn = pts.length;
+        const nodes = new Float64Array(nn * 3);
+        for (let i = 0; i < nn; i++) {
+            nodes[i * 3] = pts[i].x; nodes[i * 3 + 1] = pts[i].y; nodes[i * 3 + 2] = pts[i].z;
+        }
+        // used nodes & bottom-band Dirichlet BC (same policy as before)
+        const used = new Uint8Array(nn);
+        const npe = elemType === "C3D10" ? 10 : 4;
+        for (let i = 0; i < conn.length; i++) used[conn[i]] = 1;
+        let minY = 1e30, maxY = -1e30;
+        for (let i = 0; i < nn; i++)
+            if (used[i]) { minY = Math.min(minY, nodes[i * 3 + 1]); maxY = Math.max(maxY, nodes[i * 3 + 1]); }
+        const spanY = Math.max(1e-9, maxY - minY);
+        const tol = Math.max(.2, spanY / (base.res) * .24);
+        const fixed = new Uint8Array(nn * 3);
+        let nFixed = 0;
+        for (let i = 0; i < nn; i++)
+            if (used[i] && nodes[i * 3 + 1] <= minY + tol) {
+                fixed[i * 3] = fixed[i * 3 + 1] = fixed[i * 3 + 2] = 1;
+                nFixed++;
+            }
+        if (!nFixed) return null;
+        const r = FF2.femSolve({
+            nodes, conn, elemType,
+            E, nu,
+            density: mat.density || 1240,
+            gEff, fixed, edges
+        });
+        // package like the legacy J7 so display code (K6/ga) keeps working
+        const out = {
+            res: base.res, n: gridN, b: base.b, size: base.size,
+            nodeStress: r.nodeVon,
+            principal: r.nodePrin,
+            shear: r.nodeShear,
+            max: r.maxVon,
+            elements: conn.length / npe,
+            nodes: used.reduce((a, b) => a + b, 0),
+            volume: r.volume,
+            solverIters: r.iters, solverRelRes: r.relRes, solverDof: r.ndof
+        };
+        t3.set(e, {
+            elements: out.elements,
+            nodes: out.nodes,
+            maxVonMises: r.maxVon,
+            maxPrincipal: r.maxPrin,
+            maxShear: r.maxShear,
+            volume: r.volume,
+            type: elemType,
+            iters: r.iters,
+            relRes: r.relRes
+        });
+        return out;
+    }
+    /* dispatcher — same UI contract as the previous J7 wrapper */
+    J7 = function(e, q, t) {
+        const extra = V("#fem-load-axis")?.value === "zmin" ? Math.max(0, Number(V("#fem-load-value")?.value) || 0) : 0;
+        const m = Math.max(pe(e), 1e-9);
+        const gEff = t + extra / m;
+        const elemType = V("#fem-element")?.value === "c3d10" ? "C3D10" : "C3D4";
+        const a = __ffFemSolveObject(e, q, gEff, elemType);
+        if (!a) {
+            X1("解析できません：固定できる底面が見つかりません");
+            return { res: 4, n: 5, b: new K1(), size: new A(1, 1, 1), nodeStress: new Float64Array(125), max: 0, elements: 0, nodes: 0, volume: 0 };
+        }
+        a.appliedLoad = extra;
+        a.effectiveGravity = gEff;
+        B4.set(e, a);
+        return a;
+    };
+    /* wrap K6 to report solver convergence + mesh quality audit */
+    const __ffPreviousK6 = K6;
+    K6 = function() {
+        const r = __ffPreviousK6();
+        try {
+            const objs = F3();
+            const q = $$("#fem-mesh")?.value || "standard";
+            let iters = 0, rel = 0, dof = 0;
+            for (const o of objs) {
+                const s = B4.get(o);
+                if (s?.solverIters) { iters = Math.max(iters, s.solverIters); rel = Math.max(rel, s.solverRelRes || 0); dof += s.solverDof || 0; }
+                if (o.userData.femResult) o.userData.femResult.solver = ($$("#fem-element")?.value === "c3d10" ? "C3D10" : "C3D4") + " CSR-PCG";
+            }
+            const warnings = [];
+            for (const o of objs) {
+                const qa = Ta(o, q);
+                if (qa.min < .12) warnings.push(`${o.name || Q8?.[o.userData.type] || "物体"}: 低品質要素 min=${qa.min.toFixed(3)}`);
+                if (qa.volumeError > 15) warnings.push(`${o.name || Q8?.[o.userData.type] || "物体"}: メッシュ体積差 ${qa.volumeError.toFixed(1)}%`);
+            }
+            const res = $$("#fem-result");
+            if (res && dof) {
+                const note = warnings.length ? `／品質警告 ${warnings.length}件：${warnings.slice(0, 2).join("、")}` : "／品質監査OK";
+                res.textContent += `／PCG ${iters}回・相対残差 ${rel.toExponential(1)}・${dof}自由度${note}`;
+            }
+        } catch (err) {
+            console.warn("FEM audit failed", err);
+        }
+        return r;
+    };
 
-  __ffAddUi();
+    /* =================================================================
+       CalculiX / Abaqus .inp export (improved: extra load applied to the
+       top-surface nodes instead of every free node)
+       ================================================================= */
+    function __ffSafeName(s) {
+        return String(s || "part").replace(/[^\w\-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 48) || "part";
+    }
+    function __ffFmt(x) {
+        return Number.isFinite(x) ? Number(x).toExponential(10) : "0.0";
+    }
+    function __ffBuildExportMesh(obj, meshQuality, elementType) {
+        const base = Ma(obj, meshQuality || "standard");
+        if (elementType !== "c3d10") return { nodes: base.nodes, elements: base.tets, type: "C3D4", raw: base };
+        const nodes = base.nodes.map(p => p.clone());
+        const edgeMap = new Map();
+        const mid = (a, b) => {
+            const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+            if (edgeMap.has(key)) return edgeMap.get(key);
+            const p = nodes[a].clone().add(nodes[b]).multiplyScalar(.5);
+            const idx = nodes.length;
+            nodes.push(p);
+            edgeMap.set(key, idx);
+            return idx;
+        };
+        const elements = base.tets.map(t => {
+            const [a, b, c, d] = t;
+            return [a, b, c, d, mid(a, b), mid(b, c), mid(c, a), mid(a, d), mid(b, d), mid(c, d)];
+        });
+        return { nodes, elements, type: "C3D10", raw: base };
+    }
+    function __ffWriteNset(lines, name, ids) {
+        lines.push(`*NSET,NSET=${name}`);
+        for (let i = 0; i < ids.length; i += 12) lines.push(ids.slice(i, i + 12).join(","));
+    }
+    function __ffWriteElset(lines, name, ids) {
+        lines.push(`*ELSET,ELSET=${name}`);
+        for (let i = 0; i < ids.length; i += 12) lines.push(ids.slice(i, i + 12).join(","));
+    }
+    function __ffExportInp() {
+        const objs = F3();
+        if (!objs.length) {
+            X1("INP出力する物体を配置してください");
+            return;
+        }
+        const meshQuality = $$("#fem-mesh")?.value || "standard";
+        const elementType = $$("#fem-element")?.value === "c3d10" ? "c3d10" : "c3d4";
+        const g = ($$("#sim-gravity")?.value === "moon" ? 1.62 : 9.80665) * 1000; // mm/s^2
+        const extra = ($$("#fem-load-axis")?.value === "zmin") ? Math.max(0, Number($$("#fem-load-value")?.value) || 0) : 0;
+        const title = $$(".doc-title")?.value?.trim() || "3dcadpp_fem";
+        const lines = [];
+        lines.push("*HEADING");
+        lines.push(`** Generated by 3DCAD++ browser FEM exporter (FF2)`);
+        lines.push(`** Units: mm, N, s, tonne. Young's modulus is MPa = N/mm^2.`);
+        lines.push(`** Density is exported as tonne/mm^3. Gravity uses mm/s^2.`);
+        lines.push(`** Mesh source: browser voxel/tetra approximation. Verify with mesh convergence.`);
+        lines.push("*PREPRINT,ECHO=NO,MODEL=NO,HISTORY=NO,CONTACT=NO");
+        let nodeOffset = 0, elemOffset = 0;
+        const partInfos = [];
+        for (let pi = 0; pi < objs.length; pi++) {
+            const obj = objs[pi];
+            obj.updateMatrixWorld(true);
+            const partName = __ffSafeName(obj.name || Q8?.[obj.userData.type] || `PART_${pi + 1}`);
+            const mat = obj.userData.engineeringMaterial || O3.pla_basic;
+            const mesh = __ffBuildExportMesh(obj, meshQuality, elementType);
+            const nodeIds = mesh.nodes.map((_, i) => nodeOffset + i + 1);
+            const elemIds = mesh.elements.map((_, i) => elemOffset + i + 1);
+            lines.push(`**`);
+            lines.push(`** PART ${pi + 1}: ${partName}`);
+            lines.push("*NODE");
+            mesh.nodes.forEach((p, i) => lines.push(`${nodeOffset + i + 1}, ${__ffFmt(p.x)}, ${__ffFmt(p.y)}, ${__ffFmt(p.z)}`));
+            lines.push(`*ELEMENT,TYPE=${mesh.type},ELSET=E_${partName}`);
+            mesh.elements.forEach((el, i) => lines.push(`${elemOffset + i + 1}, ${el.map(v => nodeOffset + v + 1).join(",")}`));
+            __ffWriteElset(lines, `E_${partName}`, elemIds);
+            lines.push(`*SOLID SECTION,ELSET=E_${partName},MATERIAL=M_${partName}`);
+            lines.push("");
+            lines.push(`*MATERIAL,NAME=M_${partName}`);
+            lines.push("*ELASTIC");
+            lines.push(`${__ffFmt(Math.max(1, mat.young || 2000))}, ${__ffFmt(Math.min(.485, Math.max(.01, mat.poisson ?? .35)))}`);
+            lines.push("*DENSITY");
+            lines.push(`${__ffFmt((mat.density || 1240) * 1e-12)}`);
+            const ys = mesh.nodes.map(p => p.y);
+            const minY = Math.min(...ys), maxY = Math.max(...ys);
+            const spanY = Math.max(1, maxY - minY);
+            const tol = Math.max(.05, spanY * .025);
+            const fixed = nodeIds.filter((id, i) => mesh.nodes[i].y <= minY + tol);
+            const top = nodeIds.filter((id, i) => mesh.nodes[i].y >= maxY - tol && mesh.nodes[i].y > minY + tol);
+            __ffWriteNset(lines, `N_FIXED_${partName}`, fixed);
+            __ffWriteNset(lines, `N_ALL_${partName}`, nodeIds);
+            if (top.length) __ffWriteNset(lines, `N_TOP_${partName}`, top);
+            partInfos.push({ partName, nodeIds, elemIds, fixed, top, mat, mesh });
+            nodeOffset += mesh.nodes.length;
+            elemOffset += mesh.elements.length;
+        }
+        lines.push("**");
+        lines.push("*BOUNDARY");
+        for (const p of partInfos) lines.push(`N_FIXED_${p.partName}, 1, 3, 0.`);
+        lines.push("*STEP,NAME=STATIC_LINEAR,NLGEOM=NO");
+        lines.push("*STATIC");
+        lines.push("1.,1.,1e-05,1.");
+        for (const p of partInfos) {
+            lines.push(`*DLOAD`);
+            lines.push(`E_${p.partName}, GRAV, ${__ffFmt(g)}, 0., -1., 0.`);
+            if (extra > 0 && p.top.length) {
+                const f = -extra / partInfos.length / p.top.length;
+                lines.push("*CLOAD");
+                for (const id of p.top) lines.push(`${id}, 2, ${__ffFmt(f)}`);
+            }
+        }
+        lines.push("*NODE FILE");
+        lines.push("U");
+        lines.push("*EL FILE");
+        lines.push("S,E");
+        lines.push("*END STEP");
+        const blob = new Blob([lines.join("\n") + "\n"], { type: "text/plain" });
+        da(blob, __ffSafeName(title) + "_calculix_like.inp");
+        const result = $$("#fem-result");
+        if (result) result.textContent = "CalculiX/Abaqus風INPを出力しました。外部ソルバーで再解析できます。";
+        X1("INPファイルを保存しました");
+    }
+
+    // A legacy IIFE later in this file wraps U_ with a per-frame "landing
+    // damper" (o.position.y -= box.min.y, velocity.y = 0, ...). It executes
+    // after this patch, so we retake the binding once module evaluation ends.
+    queueMicrotask(() => { U_ = function() {}; });
+    globalThis.__ff2Diag = function() {
+        const out = [];
+        for (const o of F3()) {
+            const b = __bodyByObj.get(o);
+            const box = new K1().setFromObject(o);
+            out.push({
+                type: o.userData.type, mat: o.userData.engineeringMaterial?.key,
+                kind: b?.kind, boxiness: b && +b.boxiness?.toFixed(2), radius: b && +b.radius?.toFixed(1),
+                comLocal: b && [...b.comLocal].map(x => +x.toFixed(1)),
+                x: b && [...b.x].map(x => +x.toFixed(1)),
+                v: b && [...b.v].map(x => +x.toFixed(1)),
+                minY: +box.min.y.toFixed(2), sleeping: b?.sleeping,
+                scale: [o.scale.x, o.scale.y, o.scale.z],
+                verts: o.geometry?.attributes?.position?.count
+            });
+        }
+        console.table(out);
+        return out;
+    };
+    __ffAddUi();
 })();
 
-
-
-/* Make simulation bodies dynamic by default; ground contact, not infinite mass,
-   should support initially resting objects. */
-(()=>{
-  const __ffB3MassWrapped=B3;
-  function __ffNormalizeMasses(){
-    for(const o of F3()){
-      const st=J2.get(o);
-      if(!st) continue;
-      if(Number.isFinite(st.mass) && st.mass>0) continue;
-      const box=new K1().setFromObject(o), size=box.getSize(new A);
-      const rho=o.userData.engineeringMaterial?.density||1240;
-      const vol=Math.max(de(o), size.x*size.y*size.z*.25, 1);
-      st.mass=Math.max(1e-5, rho*vol*1e-9);
-      const l=Math.max(size.x,size.z,1);
-      st.inertia=Math.max(1e-9, st.mass*(size.y*size.y+l*l)/12);
-      st.groundedSupport=false;
-    }
-  }
-  B3=function(dt){__ffNormalizeMasses(); return __ffB3MassWrapped(dt);};
-})();
 
 /* Polygon loft primitive: independent 1..32 vertex rings, scale and twist. */
 (()=>{
