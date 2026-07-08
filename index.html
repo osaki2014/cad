@@ -5920,6 +5920,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         let id = 0;
         for (const o of F3()) {
             const body = __ffMakeBody(o, id++);
+            if (o.userData && o.userData.isLauncher) { body.isStatic = true; body.invMass = 0; }
             __world.bodies.push(body);
             __bodyByObj.set(o, body);
             // mirror state kept for UI code that reads J2 (mass display, reset, ...)
@@ -7301,29 +7302,46 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       try { X1(`発射装置 #${seq} を空中に設置。移動・回転で狙いを定めます`); } catch (_) {}
     }
 
-    function fire(o) {
+    function extend(o) {
       if (!o || !o.userData || !o.userData.isLauncher) return;
-      o.userData.launched = true;
-      o.userData._fireStart = performance.now();
-      try { X1(`発射装置 #${o.userData.launchId} 発射！`); } catch (_) {}
+      o.userData.launched = true; o.userData._fireStart = performance.now();
+      renderList();
+      try { X1(`発射装置 #${o.userData.launchId} の軸を伸ばしました`); } catch (_) {}
     }
-    function fireAll() {
+    function retract(o) {
+      if (!o || !o.userData || !o.userData.isLauncher) return;
+      o.userData.launched = false; o.userData._fireStart = performance.now();
+      renderList();
+      try { X1(`発射装置 #${o.userData.launchId} の軸を縮めました`); } catch (_) {}
+    }
+    function extendAll() {
       const L = listOf(); if (!L.length) { try { X1("先に発射装置を設置してください"); } catch (_) {} return; }
       const sel = S1[0];
-      if (sel && sel.userData.isLauncher) fire(sel); else L.forEach(fire);
+      if (sel && sel.userData.isLauncher) extend(sel); else L.forEach(extend);
+    }
+    function retractAll() {
+      const L = listOf(); if (!L.length) return;
+      const sel = S1[0];
+      if (sel && sel.userData.isLauncher) retract(sel); else L.forEach(retract);
     }
 
     // animation of rod / spring (visual), always running
     function tick() {
       try {
+        const running = (typeof ye !== "undefined") && ye;
         for (const o of listOf()) {
           const ud = o.userData;
+          if (!running) { ud._pinPos = o.position.clone(); ud._pinQuat = o.quaternion.clone(); }
           let e = ud.launched ? 1 : 0;
-          if (ud.launched && ud._fireStart) e = Math.min(1, (performance.now() - ud._fireStart) / 180);
+          if (ud._fireStart) {
+            const f = Math.min(1, (performance.now() - ud._fireStart) / 200);
+            e = ud.launched ? f : (1 - f);
+          }
           e = e * e * (3 - 2 * e); // smoothstep
+          ud._ext = e;
           const rod = o.getObjectByName("__rod");
           const spring = o.getObjectByName("__spring");
-                    if (rod) rod.position.y = 2 + (24 - 2) * e;
+          if (rod) rod.position.y = 2 + (24 - 2) * e;
           if (spring) spring.scale.y = .42 + .58 * e;
         }
       } catch (_) {}
@@ -7348,31 +7366,31 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     // transmit force to bodies in front of a launched device (like a spring)
     function applyLaunchers(h) {
       if (typeof __bodyByObj === "undefined" || !__bodyByObj) return;
-      const dir = new A(), tip = new A(), base = new A(), rel = new A();
-      // freeze every launcher as a true zero-gravity static anchor (runs each substep)
+      const dir = new A(), ball = new A(), d = new A();
+      // 1) hard-freeze every launcher at its placed transform (zero-gravity anchor)
       for (const o of listOf()) {
         const b = __bodyByObj.get ? __bodyByObj.get(o) : null;
         if (!b) continue;
+        const ud = o.userData;
+        try { if (ud._pinPos && ud._pinQuat) __ffSyncBodyFromObject(b, { position: ud._pinPos, quaternion: ud._pinQuat }); } catch (_) {}
         b.isStatic = true; b.invMass = 0; b.sleeping = true;
         try { FF2.vset(b.v, 0, 0, 0); FF2.vset(b.w, 0, 0, 0); } catch (_) {}
         try { for (let i = 0; i < 9; i++) { b.invIlocal[i] = 0; b.invIworld[i] = 0; } } catch (_) {}
       }
+      // 2) when extended, the red tip transmits the set force to whatever it touches
       for (const o of listOf()) {
         const ud = o.userData;
         if (!ud.launched || (ud.forceN || 0) <= 0) continue;
         o.updateMatrixWorld(true);
         dir.set(0, 1, 0).applyQuaternion(o.quaternion).normalize();
-        o.getWorldPosition(base);
-        tip.copy(base).addScaledVector(dir, LN.barrelH + LN.rodLen);
-        const maxReach = base.distanceTo(tip) + LN.ballR;
+        const rod = o.getObjectByName("__rod");
+        const tipY = (rod ? rod.position.y : 24) + LN.rodLen;
+        ball.copy(o.localToWorld(new A(0, tipY, 0)));
         for (const pair of __bodyByObj) {
           const obj = pair[0], b = pair[1];
           if (!b || b.isStatic || obj === o) continue;
-          rel.set(b.x[0] - base.x, b.x[1] - base.y, b.x[2] - base.z);
-          const along = rel.dot(dir);
-          if (along < 0 || along > maxReach + (b.boundR || 0)) continue;
-          const lateral = Math.hypot(rel.x - dir.x * along, rel.y - dir.y * along, rel.z - dir.z * along);
-          if (lateral > LN.barrelR + (b.boundR || 0)) continue;
+          d.set(b.x[0] - ball.x, b.x[1] - ball.y, b.x[2] - ball.z);
+          if (d.length() > LN.ballR + (b.boundR || 0) + 1) continue;
           try { FF2.wake(b); } catch (_) {}
           const acc = ud.forceN * 1000 / b.mass;
           b.v[0] += dir.x * acc * h; b.v[1] += dir.y * acc * h; b.v[2] += dir.z * acc * h;
@@ -7402,14 +7420,14 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         <div data-launch="${o.userData.launchId}" style="display:grid;grid-template-columns:24px 1fr auto 26px;gap:4px;align-items:center;margin-top:5px">
           <b>#${o.userData.launchId}</b>
           <label style="display:flex;gap:3px;align-items:center">力<input data-lf type="number" min="0" step="0.1" value="${o.userData.forceN}" style="width:100%;font-size:9px;padding:2px">N</label>
-          <button data-lfire type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:${o.userData.launched ? "#c9ff4f" : "#f5f5f1"};font-size:9px;font-weight:800;padding:3px 7px">発射</button>
+          <button data-lfire type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:${o.userData.launched ? "#f5f5f1" : "#c9ff4f"};font-size:9px;font-weight:800;padding:3px 7px">${o.userData.launched ? "縮む" : "伸びる"}</button>
           <button data-lx type="button" style="border:1px solid #cfd0c9;border-radius:5px;background:#f5f5f1;font-size:9px">✕</button>
         </div>`).join("") || '<div style="color:#8a8f85;margin-top:4px">「設置」で発射装置を追加</div>';
       list.querySelectorAll("[data-launch]").forEach(row => {
         const o = L.find(x => x.userData.launchId === +row.dataset.launch);
         if (!o) return;
         row.querySelector("[data-lf]").oninput = e => { o.userData.forceN = Math.max(0, Number(e.target.value) || 0); };
-        row.querySelector("[data-lfire]").onclick = () => { fire(o); renderList(); };
+        row.querySelector("[data-lfire]").onclick = () => { if (o.userData.launched) retract(o); else extend(o); renderList(); };
         row.querySelector("[data-lx]").onclick = () => {
           try {
             o.parent && o.parent.remove(o);
@@ -7432,7 +7450,8 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           <span>スマートボール発射装置</span>
           <span style="display:flex;gap:4px">
             <button id="ff-launch-add" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#f5f5f1;padding:4px 8px;font-size:9px;font-weight:800">設置</button>
-            <button id="ff-launch-fire" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#c9ff4f;padding:4px 8px;font-size:9px;font-weight:800">発射</button>
+            <button id="ff-launch-extend" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#c9ff4f;padding:4px 8px;font-size:9px;font-weight:800">伸びる</button>
+            <button id="ff-launch-retract" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#f5f5f1;padding:4px 8px;font-size:9px;font-weight:800">縮む</button>
           </span>
         </div>
         <div style="color:#8a8f85;margin-top:4px">「設置」で空中に発射装置を追加し、移動・回転で狙いを定めます。この装置だけは無重力で空中に静止します。</div>
@@ -7442,7 +7461,8 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       if (springs && springs.parentNode) springs.parentNode.insertBefore(box, springs.nextSibling);
       else panel.appendChild(box);
       document.getElementById("ff-launch-add").onclick = placeLauncher;
-      document.getElementById("ff-launch-fire").onclick = fireAll;
+      document.getElementById("ff-launch-extend").onclick = extendAll;
+      document.getElementById("ff-launch-retract").onclick = retractAll;
       renderList();
     }
     // the spring box is created lazily by the app; retry until our panel anchors
@@ -7472,13 +7492,13 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
 
 /* ============================================================================
    v4 feature patch — polygonLoft live fix + control-point editing for the five
-   primitives (box / wedge / cylinder / cone / polygonLoft), with per-point
-   curvature (curve) and inward fillet (linear) sliders and Shift axis-lock.
+   primitives, with modes 直線 / 曲線(曲率スライダー) / ふくらむ / へこむ(量スライダー)
+   and Shift axis-lock.
    ========================================================================= */
 (() => {
   const log = (...a) => { try { console.warn("[v4patch]", ...a); } catch (_) {} };
 
-  /* --- Fix: polygonLoft parameter fields now rebuild the mesh live --------- */
+  /* --- Fix: polygonLoft parameter fields rebuild the mesh live ------------- */
   try {
     const psec = document.querySelector(".polygon-loft-section");
     if (psec && typeof polygonLoftGeometry === "function") {
@@ -7529,47 +7549,47 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       return g;
     };
 
-    // build a closed ring honouring per-point mode(curve/linear), curvature and fillet
-    const buildRing = (ptsArr, modes, curvs, fillets) => {
+    // Build a closed ring honouring per-point mode. Each edge i->i+1 is rendered
+    // from its two endpoints' modes: curve = smooth hermite (per-point curvature),
+    // bulge/dent = the edge bows out/in toward the ring centroid, linear = straight.
+    const buildRing = (ptsArr, modes, curvs, amts) => {
       const P = ptsArr.map(V3);
       const n = P.length;
       if (n < 3) return P;
-      // stage 1: expand into nodes; linear+fillet corners become small arcs
-      const nodes = [];
+      const cen = centroid(P);
+      const out = [];
       for (let i = 0; i < n; i++) {
-        const p = P[i], prev = P[(i - 1 + n) % n], next = P[(i + 1) % n];
-        if (modes[i] === "curve") {
-          nodes.push({ p: p.clone(), tan: (curvs[i] != null ? curvs[i] : .35) });
-        } else {
-          const f = fillets[i] != null ? fillets[i] : 0;
-          if (f <= 1e-4) { nodes.push({ p: p.clone(), tan: 0 }); }
-          else {
-            const il = prev.clone().sub(p), ol = next.clone().sub(p);
-            const ill = il.length() || 1, oll = ol.length() || 1;
-            const d = Math.min(f * 0.49 * Math.min(ill, oll), 0.49 * Math.min(ill, oll));
-            const p0 = p.clone().addScaledVector(il.multiplyScalar(1 / ill), d);
-            const p2 = p.clone().addScaledVector(ol.multiplyScalar(1 / oll), d);
-            const steps = 5;
-            for (let s = 0; s <= steps; s++) {
-              const u = s / steps, w = 1 - u;
-              nodes.push({ p: p0.clone().multiplyScalar(w * w).addScaledVector(p, 2 * w * u).addScaledVector(p2, u * u), tan: 0 });
-            }
+        const a = P[i], b = P[(i + 1) % n], prev = P[(i - 1 + n) % n], next = P[(i + 2) % n];
+        const ma = modes[i], mb = modes[(i + 1) % n];
+        const curveEdge = ma === "curve" || mb === "curve";
+        const bowA = ma === "bulge" ? (amts[i] || 0) : ma === "dent" ? -(amts[i] || 0) : 0;
+        const bowB = mb === "bulge" ? (amts[(i + 1) % n] || 0) : mb === "dent" ? -(amts[(i + 1) % n] || 0) : 0;
+        const bow = bowA + bowB;
+        if (curveEdge) {
+          const t0 = ma === "curve" ? (curvs[i] != null ? curvs[i] : .5) : 0;
+          const t1 = mb === "curve" ? (curvs[(i + 1) % n] != null ? curvs[(i + 1) % n] : .5) : 0;
+          const m0 = t0 > 0 ? b.clone().sub(prev).multiplyScalar(0.5 * t0) : new A();
+          const m1 = t1 > 0 ? next.clone().sub(a).multiplyScalar(0.5 * t1) : new A();
+          const seg = 12;
+          for (let k = 0; k < seg; k++) {
+            const t = k / seg, t2 = t * t, t3 = t2 * t;
+            out.push(a.clone().multiplyScalar(2 * t3 - 3 * t2 + 1)
+              .addScaledVector(m0, t3 - 2 * t2 + t)
+              .addScaledVector(b, -2 * t3 + 3 * t2)
+              .addScaledVector(m1, t3 - t2));
           }
-        }
-      }
-      // stage 2: hermite through nodes; corners where tan == 0
-      const m = nodes.length, out = [];
-      for (let i = 0; i < m; i++) {
-        const a = nodes[i], b = nodes[(i + 1) % m], prev = nodes[(i - 1 + m) % m], next = nodes[(i + 2) % m];
-        const m0 = a.tan > 0 ? b.p.clone().sub(prev.p).multiplyScalar(0.5 * a.tan) : new A();
-        const m1 = b.tan > 0 ? next.p.clone().sub(a.p).multiplyScalar(0.5 * b.tan) : new A();
-        const seg = (a.tan > 0 || b.tan > 0) ? 6 : 1;
-        for (let k = 0; k < seg; k++) {
-          const t = k / seg, t2 = t * t, t3 = t2 * t;
-          out.push(a.p.clone().multiplyScalar(2 * t3 - 3 * t2 + 1)
-            .addScaledVector(m0, t3 - 2 * t2 + t)
-            .addScaledVector(b.p, -2 * t3 + 3 * t2)
-            .addScaledVector(m1, t3 - t2));
+        } else if (Math.abs(bow) > 1e-4) {
+          const mid = a.clone().add(b).multiplyScalar(.5);
+          const dirOut = mid.clone().sub(cen); const dl = dirOut.length() || 1; dirOut.multiplyScalar(1 / dl);
+          const len = b.clone().sub(a).length();
+          const ctrl = mid.clone().addScaledVector(dirOut, bow * len * 0.7);
+          const seg = 10;
+          for (let k = 0; k < seg; k++) {
+            const t = k / seg, w = 1 - t;
+            out.push(a.clone().multiplyScalar(w * w).addScaledVector(ctrl, 2 * w * t).addScaledVector(b, t * t));
+          }
+        } else {
+          out.push(a.clone());
         }
       }
       return out;
@@ -7583,11 +7603,11 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         const X = 15, Y = 10, Z = 15;
         A0 = [bk(-X, -Y, -Z), bk(X, -Y, -Z), bk(X, -Y, Z), bk(-X, -Y, Z)];
         B0 = [bk(-X, Y, -Z), bk(X, Y, -Z), bk(X, Y, Z), bk(-X, Y, Z)];
-        mA = ["linear", "linear", "linear", "linear"]; mB = mA.slice();
+        mA = A0.map(() => "linear"); mB = B0.map(() => "linear");
       } else if (t === "wedge") {
         A0 = [bk(-14, -14, -15), bk(14, -14, -15), bk(-14, 14, -15)];
         B0 = [bk(-14, -14, 15), bk(14, -14, 15), bk(-14, 14, 15)];
-        mA = ["linear", "linear", "linear"]; mB = mA.slice();
+        mA = A0.map(() => "linear"); mB = B0.map(() => "linear");
       } else if (t === "cylinder") {
         const N = 12, r = 15, hy = 15;
         for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2; A0.push(bk(Math.cos(a) * r, -hy, Math.sin(a) * r)); B0.push(bk(Math.cos(a) * r, hy, Math.sin(a) * r)); mA.push("curve"); mB.push("curve"); }
@@ -7605,28 +7625,30 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         if (nt === 1) { B0 = [bk(0, h / 2, 0)]; mB = ["linear"]; }
         else for (let i = 0; i < nt; i++) { const a = at + i / nt * Math.PI * 2; B0.push(bk(Math.cos(a) * rt, h / 2, Math.sin(a) * rt)); mB.push("linear"); }
       }
-      const curv = [A0.map(() => .35), B0.map(() => .35)];
-      const fillet = [A0.map(() => 0), B0.map(() => 0)];
-      return { rings: [A0, B0], modes: [mA, mB], curv, fillet };
+      return {
+        rings: [A0, B0], modes: [mA, mB],
+        curv: [A0.map(() => .5), B0.map(() => .5)],
+        amt: [A0.map(() => .3), B0.map(() => .3)]
+      };
     };
 
     const ensureCP = (o) => {
       const cp = o.userData.cp; if (!cp) return;
+      if (!cp.modes) cp.modes = [[], []];
+      if (!cp.curv) cp.curv = [[], []];
+      if (!cp.amt) cp.amt = [[], []];
       for (let ri = 0; ri < 2; ri++) {
         const n = cp.rings[ri].length;
-        if (!cp.modes) cp.modes = [[], []];
-        if (!cp.curv) cp.curv = [[], []];
-        if (!cp.fillet) cp.fillet = [[], []];
-        if (!Array.isArray(cp.curv[ri]) || cp.curv[ri].length !== n) cp.curv[ri] = cp.rings[ri].map(() => .35);
-        if (!Array.isArray(cp.fillet[ri]) || cp.fillet[ri].length !== n) cp.fillet[ri] = cp.rings[ri].map(() => 0);
+        if (!Array.isArray(cp.curv[ri]) || cp.curv[ri].length !== n) cp.curv[ri] = cp.rings[ri].map(() => .5);
+        if (!Array.isArray(cp.amt[ri]) || cp.amt[ri].length !== n) cp.amt[ri] = cp.rings[ri].map(() => .3);
       }
     };
 
     const rebuild = (o) => {
       const cp = o.userData.cp; if (!cp) return;
       ensureCP(o);
-      const rA = buildRing(cp.rings[0], cp.modes[0], cp.curv[0], cp.fillet[0]);
-      const rB = buildRing(cp.rings[1], cp.modes[1], cp.curv[1], cp.fillet[1]);
+      const rA = buildRing(cp.rings[0], cp.modes[0], cp.curv[0], cp.amt[0]);
+      const rB = buildRing(cp.rings[1], cp.modes[1], cp.curv[1], cp.amt[1]);
       if (rA.length < 1 || rB.length < 1) return;
       const old = o.geometry; o.geometry = loftGeo(rA, rB); old.dispose();
       try { if (o.material && o.material.side !== 2) { o.material.side = 2; o.material.needsUpdate = true; } } catch (_) {}
@@ -7634,9 +7656,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
 
     const enableCP = (o) => {
       if (!o.userData.cp) { o.userData.cp = deriveCP(o); o.scale.set(1, 1, 1); }
-      ensureCP(o);
-      o.userData.cpOn = true;
-      rebuild(o);
+      ensureCP(o); o.userData.cpOn = true; rebuild(o);
     };
     const disableCP = (o) => { o.userData.cpOn = false; };
 
@@ -7644,7 +7664,9 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     style.textContent = `
       .cp-edit-overlay{position:absolute;inset:0;z-index:8;width:100%;height:100%;pointer-events:none;overflow:visible}
       .cp-edit-overlay circle{fill:#ffd23f;stroke:#20211c;stroke-width:2.4;pointer-events:all;cursor:move;filter:drop-shadow(0 1px 2px #0007)}
-      .cp-edit-overlay circle.cp-curve{fill:#7ad0ff}
+      .cp-edit-overlay circle.m-curve{fill:#7ad0ff}
+      .cp-edit-overlay circle.m-bulge{fill:#8ee36b}
+      .cp-edit-overlay circle.m-dent{fill:#ffa54f}
       .cp-edit-overlay circle.sel{stroke:#c9ff4f;stroke-width:3.8}
       .cp-edit-overlay line{stroke:#20211c;stroke-opacity:.35;stroke-width:1.2;stroke-dasharray:4 3}
       .cp-section{display:none}.cp-section.show{display:block}
@@ -7663,12 +7685,16 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     const syncPointUI = (o) => {
       if (!o || !selCP) return;
       ensureCP(o);
-      const [ri, pi] = selCP;
-      const mode = o.userData.cp.modes[ri][pi];
+      const [ri, pi] = selCP, mode = o.userData.cp.modes[ri][pi];
       const ms = V("#cp-point-mode"); if (ms) ms.value = mode;
-      const sl = V("#cp-point-value"), lb = V("#cp-point-value-label");
-      if (sl) sl.value = mode === "curve" ? (o.userData.cp.curv[ri][pi] ?? .35) : (o.userData.cp.fillet[ri][pi] ?? 0);
-      if (lb) lb.textContent = mode === "curve" ? "曲率" : "フィレット";
+      const row = V("#cp-value-row"), sl = V("#cp-point-value"), lb = V("#cp-point-value-label");
+      const show = mode !== "linear";
+      if (row) row.style.display = show ? "" : "none";
+      if (sl) {
+        if (mode === "curve") { sl.min = 0; sl.max = 2; sl.step = 0.05; sl.value = o.userData.cp.curv[ri][pi] != null ? o.userData.cp.curv[ri][pi] : .5; }
+        else if (mode === "bulge" || mode === "dent") { sl.min = 0; sl.max = 1; sl.step = 0.05; sl.value = o.userData.cp.amt[ri][pi] != null ? o.userData.cp.amt[ri][pi] : .3; }
+      }
+      if (lb) lb.textContent = mode === "curve" ? "曲率" : mode === "bulge" ? "ふくらみ" : mode === "dent" ? "へこみ" : "";
     };
 
     const renderCP = () => {
@@ -7687,7 +7713,8 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           html += `<line x1="${scr[i].x}" y1="${scr[i].y}" x2="${b.x}" y2="${b.y}"/>`;
         }
         html += scr.map((s, i) => {
-          const cls = (cp.modes[ri][i] === "curve" ? "cp-curve " : "") + (selCP && selCP[0] === ri && selCP[1] === i ? "sel" : "");
+          const mode = cp.modes[ri][i];
+          const cls = "m-" + mode + (selCP && selCP[0] === ri && selCP[1] === i ? " sel" : "");
           return `<circle data-cp="${ri},${i}" class="${cls}" cx="${s.x}" cy="${s.y}" r="6.5"/>`;
         }).join("");
       }
@@ -7717,7 +7744,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       if (!U3.ray.intersectPlane(cpDrag.plane, hit)) return;
       let local = cpDrag.o.worldToLocal(hit.clone());
       const s = cpDrag.startLocal;
-      if (e.shiftKey && s) {                                 // Shift = lock to dominant object axis
+      if (e.shiftKey && s) {
         const dx = local.x - s.x, dy = local.y - s.y, dz = local.z - s.z;
         const adx = Math.abs(dx), ady = Math.abs(dy), adz = Math.abs(dz);
         const nl = s.clone();
@@ -7748,12 +7775,17 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         <input id="cp-edit-toggle" type="checkbox"> 構成点を表示して編集する
       </label>
       <label class="cp-row">選択点の形
-        <select id="cp-point-mode"><option value="linear">直線（尖角）</option><option value="curve">曲線</option></select>
+        <select id="cp-point-mode">
+          <option value="linear">直線</option>
+          <option value="curve">曲線</option>
+          <option value="bulge">ふくらむ</option>
+          <option value="dent">へこむ</option>
+        </select>
       </label>
-      <label class="cp-row"><span id="cp-point-value-label">曲率</span>
-        <input id="cp-point-value" type="range" min="0" max="1" step="0.05" value="0.35">
+      <label class="cp-row" id="cp-value-row" style="display:none"><span id="cp-point-value-label">曲率</span>
+        <input id="cp-point-value" type="range" min="0" max="2" step="0.05" value="0.5">
       </label>
-      <p style="color:#8a8f85;font-size:8px;line-height:1.4;margin-top:6px">頂点や円周の構成点をドラッグして縦横・前後・上下に変形。Shift＋ドラッグで最も動かした軸だけに固定。点ごとに曲線（スライダーで曲率）または直線（スライダーで内側フィレット）を選べます。</p>`;
+      <p style="color:#8a8f85;font-size:8px;line-height:1.4;margin-top:6px">構成点をドラッグして縦横・前後・上下に変形。Shift＋ドラッグで最も動かした軸だけに固定。点ごとに直線／曲線（曲率スライダー）／ふくらむ・へこむ（量スライダー、接続する辺が重心方向に膨張・収縮）を選べます。</p>`;
     try { const host = document.querySelector(".property-content"); if (host) host.appendChild(section); } catch (e) { log("cp section", e); }
 
     document.addEventListener("change", e => {
@@ -7769,22 +7801,21 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         rebuild(o); syncPointUI(o);
         try { b5(); } catch (_) {} try { q2(); } catch (_) {}
         renderCP();
-        try { X1(e.target.value === "curve" ? "選択点を曲線にしました" : "選択点を直線（尖角）にしました"); } catch (_) {}
+      } else if (id === "cp-point-value") {
+        try { q2(); } catch (_) {}
       }
     });
-    // live slider (input) for curvature / fillet of the selected point
     document.addEventListener("input", e => {
       if (!e.target || e.target.id !== "cp-point-value") return;
       const o = activeCP(); if (!o || !selCP) return;
       ensureCP(o);
-      const [ri, pi] = selCP, val = Number(e.target.value);
-      if (o.userData.cp.modes[ri][pi] === "curve") o.userData.cp.curv[ri][pi] = val;
-      else o.userData.cp.fillet[ri][pi] = val;
+      const [ri, pi] = selCP, mode = o.userData.cp.modes[ri][pi], val = Number(e.target.value);
+      if (mode === "curve") o.userData.cp.curv[ri][pi] = val;
+      else if (mode === "bulge" || mode === "dent") o.userData.cp.amt[ri][pi] = val;
       rebuild(o);
       try { b5(); } catch (_) {}
       renderCP();
     });
-    document.addEventListener("change", e => { if (e.target && e.target.id === "cp-point-value") { try { q2(); } catch (_) {} } });
 
     if (typeof h2 === "function") {
       const _h2 = h2;
