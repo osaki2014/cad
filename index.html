@@ -7323,8 +7323,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           e = e * e * (3 - 2 * e); // smoothstep
           const rod = o.getObjectByName("__rod");
           const spring = o.getObjectByName("__spring");
-          if (typeof ye !== "undefined") { if (ye) { if (ud._pinPos) { o.position.copy(ud._pinPos); if (ud._pinQuat) o.quaternion.copy(ud._pinQuat); } } else { ud._pinPos = o.position.clone(); ud._pinQuat = o.quaternion.clone(); } }
-          if (rod) rod.position.y = 8 + (24 - 8) * e;
+                    if (rod) rod.position.y = 2 + (24 - 2) * e;
           if (spring) spring.scale.y = .42 + .58 * e;
         }
       } catch (_) {}
@@ -7350,6 +7349,14 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     function applyLaunchers(h) {
       if (typeof __bodyByObj === "undefined" || !__bodyByObj) return;
       const dir = new A(), tip = new A(), base = new A(), rel = new A();
+      // freeze every launcher as a true zero-gravity static anchor (runs each substep)
+      for (const o of listOf()) {
+        const b = __bodyByObj.get ? __bodyByObj.get(o) : null;
+        if (!b) continue;
+        b.isStatic = true; b.invMass = 0; b.sleeping = true;
+        try { FF2.vset(b.v, 0, 0, 0); FF2.vset(b.w, 0, 0, 0); } catch (_) {}
+        try { for (let i = 0; i < 9; i++) { b.invIlocal[i] = 0; b.invIworld[i] = 0; } } catch (_) {}
+      }
       for (const o of listOf()) {
         const ud = o.userData;
         if (!ud.launched || (ud.forceN || 0) <= 0) continue;
@@ -7464,50 +7471,40 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
 /* ==== v4 feature patch (injected) ==== */
 
 /* ============================================================================
-   v4 feature patch — polygonLoft live editing fix + control-point editing for
-   the five primitives (box / wedge / cylinder / cone / polygonLoft).
-   Same module scope as the app; every block guarded.
+   v4 feature patch — polygonLoft live fix + control-point editing for the five
+   primitives (box / wedge / cylinder / cone / polygonLoft), with per-point
+   curvature (curve) and inward fillet (linear) sliders and Shift axis-lock.
    ========================================================================= */
 (() => {
   const log = (...a) => { try { console.warn("[v4patch]", ...a); } catch (_) {} };
 
-  /* -------------------------------------------------------------------------
-     Fix: 多角柱 (polygonLoft) parameter fields did not rebuild the mesh.
-     Add a live "input" listener that rebuilds geometry on every change.
-     ---------------------------------------------------------------------- */
+  /* --- Fix: polygonLoft parameter fields now rebuild the mesh live --------- */
   try {
     const psec = document.querySelector(".polygon-loft-section");
     if (psec && typeof polygonLoftGeometry === "function") {
-      const rebuild = (t) => {
+      psec.addEventListener("input", e => {
+        const t = e.target;
         if (!t || !t.matches || !t.matches("[data-poly]")) return;
         const o = S1 && S1[0];
         if (!o || o.userData.type !== "polygonLoft" || !o.userData.polygonLoft) return;
         const k = t.dataset.poly, p = o.userData.polygonLoft, oldH = p.height;
-        let v = Number(t.value);
-        if (!isFinite(v)) return;
+        let v = Number(t.value); if (!isFinite(v)) return;
         if (k.includes("Vertices")) v = Math.round(Math.min(32, Math.max(1, v)));
         p[k] = v;
-        const old = o.geometry;
-        o.geometry = polygonLoftGeometry(p);
-        old.dispose();
+        const old = o.geometry; o.geometry = polygonLoftGeometry(p); old.dispose();
         if (k === "height") o.position.y += (p.height - oldH) / 2;
         o.userData.baseY = p.height / 2;
-        try { b5(); } catch (_) {}
-        try { q2(); } catch (_) {}
-      };
-      psec.addEventListener("input", e => rebuild(e.target));
+        try { b5(); } catch (_) {} try { q2(); } catch (_) {}
+      });
     }
   } catch (e) { log("polygonLoft fix", e); }
 
-  /* -------------------------------------------------------------------------
-     Control-point editing for the 5 primitives.
-     ---------------------------------------------------------------------- */
+  /* --- Control-point editing --------------------------------------------- */
   try {
     const SUPPORTED = new Set(["box", "wedge", "cylinder", "cone", "polygonLoft"]);
     const V3 = (a) => new A(a[0], a[1], a[2]);
-
-    // ---- geometry from two explicit rings of Vector3 (sides + caps) --------
     const centroid = (pts) => { const c = new A(); for (const p of pts) c.add(p); return c.multiplyScalar(1 / pts.length); };
+
     const loftGeo = (ringA, ringB) => {
       const pos = [], idx = [];
       const na = ringA.length, nb = ringB.length, aS = 0, bS = na;
@@ -7532,30 +7529,52 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       return g;
     };
 
-    // ---- per-point curve/straight resampling of a closed ring -------------
-    const resampleRing = (ptsArr, modes) => {
-      const pts = ptsArr.map(V3);
-      const n = pts.length;
-      if (n < 3 || modes.every(m => m !== "curve")) return pts;
-      const out = [];
+    // build a closed ring honouring per-point mode(curve/linear), curvature and fillet
+    const buildRing = (ptsArr, modes, curvs, fillets) => {
+      const P = ptsArr.map(V3);
+      const n = P.length;
+      if (n < 3) return P;
+      // stage 1: expand into nodes; linear+fillet corners become small arcs
+      const nodes = [];
       for (let i = 0; i < n; i++) {
-        const p0 = pts[i], p1 = pts[(i + 1) % n], prev = pts[(i - 1 + n) % n], next = pts[(i + 2) % n];
-        const cur0 = modes[i] === "curve", cur1 = modes[(i + 1) % n] === "curve";
-        const m0 = cur0 ? p1.clone().sub(prev).multiplyScalar(.25) : new A();
-        const m1 = cur1 ? next.clone().sub(p0).multiplyScalar(.25) : new A();
-        const seg = (cur0 || cur1) ? 6 : 1;
+        const p = P[i], prev = P[(i - 1 + n) % n], next = P[(i + 1) % n];
+        if (modes[i] === "curve") {
+          nodes.push({ p: p.clone(), tan: (curvs[i] != null ? curvs[i] : .35) });
+        } else {
+          const f = fillets[i] != null ? fillets[i] : 0;
+          if (f <= 1e-4) { nodes.push({ p: p.clone(), tan: 0 }); }
+          else {
+            const il = prev.clone().sub(p), ol = next.clone().sub(p);
+            const ill = il.length() || 1, oll = ol.length() || 1;
+            const d = Math.min(f * 0.49 * Math.min(ill, oll), 0.49 * Math.min(ill, oll));
+            const p0 = p.clone().addScaledVector(il.multiplyScalar(1 / ill), d);
+            const p2 = p.clone().addScaledVector(ol.multiplyScalar(1 / oll), d);
+            const steps = 5;
+            for (let s = 0; s <= steps; s++) {
+              const u = s / steps, w = 1 - u;
+              nodes.push({ p: p0.clone().multiplyScalar(w * w).addScaledVector(p, 2 * w * u).addScaledVector(p2, u * u), tan: 0 });
+            }
+          }
+        }
+      }
+      // stage 2: hermite through nodes; corners where tan == 0
+      const m = nodes.length, out = [];
+      for (let i = 0; i < m; i++) {
+        const a = nodes[i], b = nodes[(i + 1) % m], prev = nodes[(i - 1 + m) % m], next = nodes[(i + 2) % m];
+        const m0 = a.tan > 0 ? b.p.clone().sub(prev.p).multiplyScalar(0.5 * a.tan) : new A();
+        const m1 = b.tan > 0 ? next.p.clone().sub(a.p).multiplyScalar(0.5 * b.tan) : new A();
+        const seg = (a.tan > 0 || b.tan > 0) ? 6 : 1;
         for (let k = 0; k < seg; k++) {
           const t = k / seg, t2 = t * t, t3 = t2 * t;
-          out.push(p0.clone().multiplyScalar(2 * t3 - 3 * t2 + 1)
+          out.push(a.p.clone().multiplyScalar(2 * t3 - 3 * t2 + 1)
             .addScaledVector(m0, t3 - 2 * t2 + t)
-            .addScaledVector(p1, -2 * t3 + 3 * t2)
+            .addScaledVector(b.p, -2 * t3 + 3 * t2)
             .addScaledVector(m1, t3 - t2));
         }
       }
       return out;
     };
 
-    // ---- derive minimal control points for each primitive (local, scale baked)
     const deriveCP = (o) => {
       const t = o.userData.type, sx = o.scale.x, sy = o.scale.y, sz = o.scale.z;
       const bk = (x, y, z) => [x * sx, y * sy, z * sz];
@@ -7586,40 +7605,51 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         if (nt === 1) { B0 = [bk(0, h / 2, 0)]; mB = ["linear"]; }
         else for (let i = 0; i < nt; i++) { const a = at + i / nt * Math.PI * 2; B0.push(bk(Math.cos(a) * rt, h / 2, Math.sin(a) * rt)); mB.push("linear"); }
       }
-      return { rings: [A0, B0], modes: [mA, mB] };
+      const curv = [A0.map(() => .35), B0.map(() => .35)];
+      const fillet = [A0.map(() => 0), B0.map(() => 0)];
+      return { rings: [A0, B0], modes: [mA, mB], curv, fillet };
+    };
+
+    const ensureCP = (o) => {
+      const cp = o.userData.cp; if (!cp) return;
+      for (let ri = 0; ri < 2; ri++) {
+        const n = cp.rings[ri].length;
+        if (!cp.modes) cp.modes = [[], []];
+        if (!cp.curv) cp.curv = [[], []];
+        if (!cp.fillet) cp.fillet = [[], []];
+        if (!Array.isArray(cp.curv[ri]) || cp.curv[ri].length !== n) cp.curv[ri] = cp.rings[ri].map(() => .35);
+        if (!Array.isArray(cp.fillet[ri]) || cp.fillet[ri].length !== n) cp.fillet[ri] = cp.rings[ri].map(() => 0);
+      }
     };
 
     const rebuild = (o) => {
       const cp = o.userData.cp; if (!cp) return;
-      const rA = resampleRing(cp.rings[0], cp.modes[0]);
-      const rB = resampleRing(cp.rings[1], cp.modes[1]);
+      ensureCP(o);
+      const rA = buildRing(cp.rings[0], cp.modes[0], cp.curv[0], cp.fillet[0]);
+      const rB = buildRing(cp.rings[1], cp.modes[1], cp.curv[1], cp.fillet[1]);
       if (rA.length < 1 || rB.length < 1) return;
-      const old = o.geometry;
-      o.geometry = loftGeo(rA, rB);
-      old.dispose();
-      // double-sided so re-wound caps never render dark
+      const old = o.geometry; o.geometry = loftGeo(rA, rB); old.dispose();
       try { if (o.material && o.material.side !== 2) { o.material.side = 2; o.material.needsUpdate = true; } } catch (_) {}
     };
 
     const enableCP = (o) => {
-      if (!o.userData.cp) {
-        o.userData.cp = deriveCP(o);
-        o.scale.set(1, 1, 1);              // bake scale into the control points
-      }
+      if (!o.userData.cp) { o.userData.cp = deriveCP(o); o.scale.set(1, 1, 1); }
+      ensureCP(o);
       o.userData.cpOn = true;
       rebuild(o);
     };
     const disableCP = (o) => { o.userData.cpOn = false; };
 
-    // ---- overlay + handles ------------------------------------------------
     const style = document.createElement("style");
     style.textContent = `
       .cp-edit-overlay{position:absolute;inset:0;z-index:8;width:100%;height:100%;pointer-events:none;overflow:visible}
       .cp-edit-overlay circle{fill:#ffd23f;stroke:#20211c;stroke-width:2.4;pointer-events:all;cursor:move;filter:drop-shadow(0 1px 2px #0007)}
       .cp-edit-overlay circle.cp-curve{fill:#7ad0ff}
-      .cp-edit-overlay circle.sel{stroke:#c9ff4f;stroke-width:3.6}
+      .cp-edit-overlay circle.sel{stroke:#c9ff4f;stroke-width:3.8}
       .cp-edit-overlay line{stroke:#20211c;stroke-opacity:.35;stroke-width:1.2;stroke-dasharray:4 3}
       .cp-section{display:none}.cp-section.show{display:block}
+      .cp-row{display:grid;grid-template-columns:78px 1fr;gap:6px;align-items:center;font-size:9px;margin:5px 0}
+      .cp-row select,.cp-row input{font-size:9px;padding:3px;width:100%}
     `;
     document.head.appendChild(style);
     const overlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -7630,17 +7660,28 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     const supported = () => (S1.length === 1 && S1[0].userData && SUPPORTED.has(S1[0].userData.type)) ? S1[0] : null;
     const activeCP = () => { const o = supported(); return (o && o.userData.cpOn) ? o : null; };
 
+    const syncPointUI = (o) => {
+      if (!o || !selCP) return;
+      ensureCP(o);
+      const [ri, pi] = selCP;
+      const mode = o.userData.cp.modes[ri][pi];
+      const ms = V("#cp-point-mode"); if (ms) ms.value = mode;
+      const sl = V("#cp-point-value"), lb = V("#cp-point-value-label");
+      if (sl) sl.value = mode === "curve" ? (o.userData.cp.curv[ri][pi] ?? .35) : (o.userData.cp.fillet[ri][pi] ?? 0);
+      if (lb) lb.textContent = mode === "curve" ? "曲率" : "フィレット";
+    };
+
     const renderCP = () => {
       overlay.innerHTML = "";
       const o = activeCP();
       if (!o || document.body.classList.contains("simulation-mode")) return;
+      ensureCP(o);
       o.updateMatrixWorld(true);
       const cp = o.userData.cp;
       let html = "";
       for (let ri = 0; ri < 2; ri++) {
         const ring = cp.rings[ri];
         const scr = ring.map(a => N3(o.localToWorld(V3(a))));
-        // connecting outline
         for (let i = 0; i < scr.length && scr.length > 1; i++) {
           const b = scr[(i + 1) % scr.length];
           html += `<line x1="${scr[i].x}" y1="${scr[i].y}" x2="${b.x}" y2="${b.y}"/>`;
@@ -7658,12 +7699,14 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       const o = activeCP();
       if (!c || !o) return;
       e.preventDefault(); e.stopPropagation();
+      ensureCP(o);
       const parts = c.dataset.cp.split(",").map(Number);
       selCP = parts;
-      const wp = o.localToWorld(V3(o.userData.cp.rings[parts[0]][parts[1]]));
+      const startLocal = V3(o.userData.cp.rings[parts[0]][parts[1]]);
+      const wp = o.localToWorld(startLocal.clone());
       const nrm = j1.getWorldDirection(new A()).normalize();
-      cpDrag = { o, ri: parts[0], pi: parts[1], plane: new M5().setFromNormalAndCoplanarPoint(nrm, wp) };
-      const modeSel = V("#cp-point-mode"); if (modeSel) modeSel.value = o.userData.cp.modes[parts[0]][parts[1]];
+      cpDrag = { o, ri: parts[0], pi: parts[1], startLocal, plane: new M5().setFromNormalAndCoplanarPoint(nrm, wp) };
+      syncPointUI(o);
       try { T2.enabled = false; } catch (_) {}
       renderCP();
     });
@@ -7672,9 +7715,19 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       try { Q4(e); } catch (_) { return; }
       const hit = new A();
       if (!U3.ray.intersectPlane(cpDrag.plane, hit)) return;
-      const local = cpDrag.o.worldToLocal(hit.clone());
-      const round = v => Math.round(v * 2) / 2;    // 0.5 mm snap
-      cpDrag.o.userData.cp.rings[cpDrag.ri][cpDrag.pi] = [round(local.x), round(local.y), round(local.z)];
+      let local = cpDrag.o.worldToLocal(hit.clone());
+      const s = cpDrag.startLocal;
+      if (e.shiftKey && s) {                                 // Shift = lock to dominant object axis
+        const dx = local.x - s.x, dy = local.y - s.y, dz = local.z - s.z;
+        const adx = Math.abs(dx), ady = Math.abs(dy), adz = Math.abs(dz);
+        const nl = s.clone();
+        if (adx >= ady && adx >= adz) nl.x = s.x + dx;
+        else if (ady >= adz) nl.y = s.y + dy;
+        else nl.z = s.z + dz;
+        local = nl;
+      }
+      const r = v => Math.round(v * 2) / 2;
+      cpDrag.o.userData.cp.rings[cpDrag.ri][cpDrag.pi] = [r(local.x), r(local.y), r(local.z)];
       rebuild(cpDrag.o);
       try { b5(); } catch (_) {}
       renderCP();
@@ -7687,7 +7740,6 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       try { X1("構成点を移動しました"); } catch (_) {}
     });
 
-    // ---- property-panel section ------------------------------------------
     const section = document.createElement("div");
     section.className = "section cp-section";
     section.innerHTML = `
@@ -7695,35 +7747,45 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       <label style="display:flex;gap:7px;align-items:center;font-size:10px;margin:2px 0 7px">
         <input id="cp-edit-toggle" type="checkbox"> 構成点を表示して編集する
       </label>
-      <label style="display:grid;grid-template-columns:78px 1fr;gap:6px;align-items:center;font-size:9px">選択点の形
-        <select id="cp-point-mode" style="font-size:9px;padding:4px"><option value="linear">直線（尖角）</option><option value="curve">曲線</option></select>
+      <label class="cp-row">選択点の形
+        <select id="cp-point-mode"><option value="linear">直線（尖角）</option><option value="curve">曲線</option></select>
       </label>
-      <p style="color:#8a8f85;font-size:8px;line-height:1.4;margin-top:6px">頂点や円周の構成点をドラッグして縦横・前後・上下に変形できます。点ごとに直線／曲線を選べます。有効化すると現在の拡大縮小が構成点に反映されます。</p>`;
-    try {
-      const host = document.querySelector(".property-content");
-      if (host) host.appendChild(section);
-    } catch (e) { log("cp section", e); }
+      <label class="cp-row"><span id="cp-point-value-label">曲率</span>
+        <input id="cp-point-value" type="range" min="0" max="1" step="0.05" value="0.35">
+      </label>
+      <p style="color:#8a8f85;font-size:8px;line-height:1.4;margin-top:6px">頂点や円周の構成点をドラッグして縦横・前後・上下に変形。Shift＋ドラッグで最も動かした軸だけに固定。点ごとに曲線（スライダーで曲率）または直線（スライダーで内側フィレット）を選べます。</p>`;
+    try { const host = document.querySelector(".property-content"); if (host) host.appendChild(section); } catch (e) { log("cp section", e); }
 
-    const toggle = () => V("#cp-edit-toggle");
     document.addEventListener("change", e => {
-      if (e.target && e.target.id === "cp-edit-toggle") {
+      const id = e.target && e.target.id;
+      if (id === "cp-edit-toggle") {
         const o = supported(); if (!o) return;
         if (e.target.checked) enableCP(o); else disableCP(o);
-        try { b5(); } catch (_) {}
-        try { q2(); } catch (_) {}
+        try { b5(); } catch (_) {} try { q2(); } catch (_) {}
         renderCP();
-      } else if (e.target && e.target.id === "cp-point-mode") {
+      } else if (id === "cp-point-mode") {
         const o = activeCP(); if (!o || !selCP) return;
         o.userData.cp.modes[selCP[0]][selCP[1]] = e.target.value;
-        rebuild(o);
-        try { b5(); } catch (_) {}
-        try { q2(); } catch (_) {}
+        rebuild(o); syncPointUI(o);
+        try { b5(); } catch (_) {} try { q2(); } catch (_) {}
         renderCP();
         try { X1(e.target.value === "curve" ? "選択点を曲線にしました" : "選択点を直線（尖角）にしました"); } catch (_) {}
       }
     });
+    // live slider (input) for curvature / fillet of the selected point
+    document.addEventListener("input", e => {
+      if (!e.target || e.target.id !== "cp-point-value") return;
+      const o = activeCP(); if (!o || !selCP) return;
+      ensureCP(o);
+      const [ri, pi] = selCP, val = Number(e.target.value);
+      if (o.userData.cp.modes[ri][pi] === "curve") o.userData.cp.curv[ri][pi] = val;
+      else o.userData.cp.fillet[ri][pi] = val;
+      rebuild(o);
+      try { b5(); } catch (_) {}
+      renderCP();
+    });
+    document.addEventListener("change", e => { if (e.target && e.target.id === "cp-point-value") { try { q2(); } catch (_) {} } });
 
-    // refresh section visibility + handles on panel refresh and on render
     if (typeof h2 === "function") {
       const _h2 = h2;
       h2 = function () {
@@ -7731,9 +7793,9 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         try {
           const o = supported();
           section.classList.toggle("show", !!o);
-          const tg = toggle();
+          const tg = V("#cp-edit-toggle");
           if (o && tg) tg.checked = !!o.userData.cpOn;
-          if (!o) selCP = null;
+          if (!o) selCP = null; else syncPointUI(o);
           renderCP();
         } catch (_) {}
         return r;
