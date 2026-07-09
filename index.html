@@ -7328,10 +7328,8 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     // animation of rod / spring (visual), always running
     function tick() {
       try {
-        const running = (typeof ye !== "undefined") && ye;
         for (const o of listOf()) {
           const ud = o.userData;
-          if (!running) { ud._pinPos = o.position.clone(); ud._pinQuat = o.quaternion.clone(); }
           let e = ud.launched ? 1 : 0;
           if (ud._fireStart) {
             const f = Math.min(1, (performance.now() - ud._fireStart) / 200);
@@ -7390,8 +7388,11 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           const obj = pair[0], b = pair[1];
           if (!b || b.isStatic || obj === o) continue;
           d.set(b.x[0] - ball.x, b.x[1] - ball.y, b.x[2] - ball.z);
-          if (d.length() > LN.ballR + (b.boundR || 0) + 1) continue;
+          const dist = d.length(), minD = LN.ballR + (b.boundR || 0);
+          if (dist > minD + 1) continue;
           try { FF2.wake(b); } catch (_) {}
+          const pen = minD - dist;
+          if (pen > 0 && dist > 1e-3) { const inv = 1 / dist; b.x[0] += d.x * inv * pen; b.x[1] += d.y * inv * pen; b.x[2] += d.z * inv * pen; }
           const acc = ud.forceN * 1000 / b.mass;
           b.v[0] += dir.x * acc * h; b.v[1] += dir.y * acc * h; b.v[2] += dir.z * acc * h;
         }
@@ -7401,13 +7402,20 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       const _sp = __ffApplySprings;
       __ffApplySprings = function (h) { _sp(h); try { applyLaunchers(h); } catch (e) { log("launch force", e); } };
     }
+    if (typeof Qx === "function") {
+      const _Qx = Qx;
+      Qx = function () {
+        try { for (const o of listOf()) { o.userData._pinPos = o.position.clone(); o.userData._pinQuat = o.quaternion.clone(); } } catch (_) {}
+        return _Qx.apply(this, arguments);
+      };
+    }
 
     // reset re-compresses all launchers
     if (typeof a_ === "function") {
       const _reset = a_;
       a_ = function () {
         _reset();
-        try { for (const o of listOf()) { o.userData.launched = false; o.userData._fireStart = 0; } } catch (_) {}
+        try { for (const o of listOf()) { o.userData.launched = false; o.userData._fireStart = 0; o.userData._pinPos = o.position.clone(); o.userData._pinQuat = o.quaternion.clone(); } } catch (_) {}
       };
     }
 
@@ -7450,8 +7458,6 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           <span>スマートボール発射装置</span>
           <span style="display:flex;gap:4px">
             <button id="ff-launch-add" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#f5f5f1;padding:4px 8px;font-size:9px;font-weight:800">設置</button>
-            <button id="ff-launch-extend" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#c9ff4f;padding:4px 8px;font-size:9px;font-weight:800">伸びる</button>
-            <button id="ff-launch-retract" type="button" style="border:1px solid #cfd0c9;border-radius:6px;background:#f5f5f1;padding:4px 8px;font-size:9px;font-weight:800">縮む</button>
           </span>
         </div>
         <div style="color:#8a8f85;margin-top:4px">「設置」で空中に発射装置を追加し、移動・回転で狙いを定めます。この装置だけは無重力で空中に静止します。</div>
@@ -7461,8 +7467,6 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       if (springs && springs.parentNode) springs.parentNode.insertBefore(box, springs.nextSibling);
       else panel.appendChild(box);
       document.getElementById("ff-launch-add").onclick = placeLauncher;
-      document.getElementById("ff-launch-extend").onclick = extendAll;
-      document.getElementById("ff-launch-retract").onclick = retractAll;
       renderList();
     }
     // the spring box is created lazily by the app; retry until our panel anchors
@@ -7473,7 +7477,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         const prev = rb.onclick;
         rb.onclick = function (ev) {
           if (prev) try { prev.call(this, ev); } catch (_) {}
-          try { for (const o of listOf()) { o.userData.launched = false; o.userData._fireStart = 0; } } catch (_) {}
+          try { for (const o of listOf()) { o.userData.launched = false; o.userData._fireStart = 0; o.userData._pinPos = o.position.clone(); o.userData._pinQuat = o.quaternion.clone(); } } catch (_) {}
         };
       }
     };
@@ -7644,11 +7648,62 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       }
     };
 
+    // per-edge subdivision count for one ring
+    const edgeSegOf = (modes, amts, i, n) => {
+      const ma = modes[i], mb = modes[(i + 1) % n];
+      if (ma === "curve" || mb === "curve") return 12;
+      const bowA = (ma === "bulge" || ma === "dent") ? (amts[i] || 0) : 0;
+      const bowB = (mb === "bulge" || mb === "dent") ? (amts[(i + 1) % n] || 0) : 0;
+      if (Math.abs(bowA) + Math.abs(bowB) > 1e-4) return 10;
+      return 1;
+    };
+    // sample edge i of a ring into `out` with exactly `seg` points (k=0..seg-1)
+    const sampleEdge = (out, P, modes, curvs, amts, cen, i, n, seg) => {
+      const a = P[i], b = P[(i + 1) % n], prev = P[(i - 1 + n) % n], next = P[(i + 2) % n];
+      const ma = modes[i], mb = modes[(i + 1) % n];
+      const curveEdge = ma === "curve" || mb === "curve";
+      const bowA = ma === "bulge" ? (amts[i] || 0) : ma === "dent" ? -(amts[i] || 0) : 0;
+      const bowB = mb === "bulge" ? (amts[(i + 1) % n] || 0) : mb === "dent" ? -(amts[(i + 1) % n] || 0) : 0;
+      const bow = bowA + bowB;
+      if (curveEdge) {
+        const t0 = ma === "curve" ? (curvs[i] != null ? curvs[i] : .5) : 0;
+        const t1 = mb === "curve" ? (curvs[(i + 1) % n] != null ? curvs[(i + 1) % n] : .5) : 0;
+        const m0 = t0 > 0 ? b.clone().sub(prev).multiplyScalar(0.5 * t0) : new A();
+        const m1 = t1 > 0 ? next.clone().sub(a).multiplyScalar(0.5 * t1) : new A();
+        for (let k = 0; k < seg; k++) { const t = k / seg, t2 = t * t, t3 = t2 * t; out.push(a.clone().multiplyScalar(2 * t3 - 3 * t2 + 1).addScaledVector(m0, t3 - 2 * t2 + t).addScaledVector(b, -2 * t3 + 3 * t2).addScaledVector(m1, t3 - t2)); }
+      } else if (Math.abs(bow) > 1e-4) {
+        const mid = a.clone().add(b).multiplyScalar(.5);
+        const dirOut = mid.clone().sub(cen); const dl = dirOut.length() || 1; dirOut.multiplyScalar(1 / dl);
+        const len = b.clone().sub(a).length();
+        const ctrl = mid.clone().addScaledVector(dirOut, bow * len * 0.7);
+        for (let k = 0; k < seg; k++) { const t = k / seg, w = 1 - t; out.push(a.clone().multiplyScalar(w * w).addScaledVector(ctrl, 2 * w * t).addScaledVector(b, t * t)); }
+      } else {
+        for (let k = 0; k < seg; k++) { const t = k / seg; out.push(a.clone().multiplyScalar(1 - t).addScaledVector(b, t)); }
+      }
+    };
+    // build both rings with matched per-edge sampling so corners stay aligned
+    // (top/bottom vertical edges only join corresponding vertices — a bulge/dent
+    //  on one ring never distorts the opposite ring's vertical corner edges)
+    const buildMatched = (cp) => {
+      const A0 = cp.rings[0], B0 = cp.rings[1], nA = A0.length, nB = B0.length;
+      if (nA === nB && nA >= 3) {
+        const n = nA, PA = A0.map(V3), PB = B0.map(V3), cenA = centroid(PA), cenB = centroid(PB);
+        const outA = [], outB = [];
+        for (let i = 0; i < n; i++) {
+          const seg = Math.max(edgeSegOf(cp.modes[0], cp.amt[0], i, n), edgeSegOf(cp.modes[1], cp.amt[1], i, n));
+          sampleEdge(outA, PA, cp.modes[0], cp.curv[0], cp.amt[0], cenA, i, n, seg);
+          sampleEdge(outB, PB, cp.modes[1], cp.curv[1], cp.amt[1], cenB, i, n, seg);
+        }
+        return [outA, outB];
+      }
+      return [buildRing(A0, cp.modes[0], cp.curv[0], cp.amt[0]), buildRing(B0, cp.modes[1], cp.curv[1], cp.amt[1])];
+    };
+
     const rebuild = (o) => {
       const cp = o.userData.cp; if (!cp) return;
       ensureCP(o);
-      const rA = buildRing(cp.rings[0], cp.modes[0], cp.curv[0], cp.amt[0]);
-      const rB = buildRing(cp.rings[1], cp.modes[1], cp.curv[1], cp.amt[1]);
+      const rings = buildMatched(cp);
+      const rA = rings[0], rB = rings[1];
       if (rA.length < 1 || rB.length < 1) return;
       const old = o.geometry; o.geometry = loftGeo(rA, rB); old.dispose();
       try { if (o.material && o.material.side !== 2) { o.material.side = 2; o.material.needsUpdate = true; } } catch (_) {}
