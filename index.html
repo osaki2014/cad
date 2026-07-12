@@ -5746,7 +5746,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
    - keeps: force-arrow visualization, CalculiX/Abaqus .inp export, mesh audit
    ========================================================================= */
 (() => {
-    const FF2_VERSION = "FF2 v3.3";
+    const FF2_VERSION = "FF2 v3.4";
     console.log("[3DCAD++] physics", FF2_VERSION);
     const $$ = (s) => V(s);
     const __ff = { showForces: false, contactEvents: new Map(), forceVisuals: [], history: [], springs: [], simT: 0 };
@@ -5880,6 +5880,13 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
             restitution: Kx(o),
             id
         });
+        // launchers float: static (infinite-mass) anchor, no gravity, no sleep churn.
+        // This MUST be here (not only in Qx) — bodies created by the mid-session
+        // rebuild path previously came out dynamic and fell.
+        if (o.userData && o.userData.isLauncher) {
+            body.isStatic = true;
+            body.invMass = 0;
+        }
         __ffSyncBodyFromObject(body, o);
         return body;
     }
@@ -6030,6 +6037,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         let steps = 0;
         while (__ff.acc >= h && steps < 14) {
             __ffApplySprings(h);
+            __ffApplyLaunchers(h);
             FF2.stepWorld(__world, h);
             __ff.simT += h;
             if (__ff.simT - (__ff.lastSnapT ?? -1) >= .1) {
@@ -6237,6 +6245,97 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
         }
     }
 
+    /* ---------------- smart-ball launcher physics ----------------------
+       The red tip is a kinematic sphere driven by the rod animation. The old
+       hook-based version targeted these adapter-locals from module scope and
+       never installed — no collider, no force. This runs inside the substep. */
+    const LN_ROD_REST = 2, LN_ROD_EXT = 24, LN_ROD_LEN = 22, LN_BALL_R = 6.2;
+    function __ffApplyLaunchers(h) {
+        for (const [o, lb] of __bodyByObj) {
+            const ud = o.userData;
+            if (!ud || !ud.isLauncher || !lb) continue;
+            const ext = ud._ext ?? (ud.launched ? 1 : 0);
+            const rodY = LN_ROD_REST + (LN_ROD_EXT - LN_ROD_REST) * ext;
+            const sy = Math.abs(o.scale?.y ?? 1);
+            const scMax = Math.max(Math.abs(o.scale?.x ?? 1), sy, Math.abs(o.scale?.z ?? 1));
+            const rTip = LN_BALL_R * scMax;
+            // tip position in the body frame (scaled-local) → world
+            const tipW = FF2.bodyLocalToWorld(FF2.v3(), lb, [0, (rodY + LN_ROD_LEN) * sy, 0]);
+            // launch axis = local +Y in world
+            const dirW = FF2.m3MulV(FF2.v3(), lb.R, [0, 1, 0]);
+            FF2.vnorm(dirW, dirW);
+            // tip velocity from the extension animation (impact impulse source)
+            const prev = ud._tipPrev;
+            const tipVel = FF2.v3();
+            if (prev && h > 0) {
+                FF2.vset(tipVel, (tipW[0] - prev[0]) / h, (tipW[1] - prev[1]) / h, (tipW[2] - prev[2]) / h);
+                const tl = FF2.vlen(tipVel);
+                if (tl > 800) FF2.vscale(tipVel, tipVel, 800 / tl);
+            }
+            ud._tipPrev = Float64Array.from(tipW);
+            ud._hitLast = null;
+            const pushForce = ud.launched && (ud.forceN || 0) > 0;
+            for (const [obj, b] of __bodyByObj) {
+                if (!b || b.isStatic || obj.userData?.isLauncher) continue;
+                // exact contact of the tip sphere against the body
+                let n = FF2.v3(), pen, cp = FF2.v3();
+                if (b.kind === "sphere") {
+                    const d = FF2.vsub(FF2.v3(), b.x, tipW);
+                    const dist = FF2.vlen(d) || 1e-6;
+                    pen = rTip + b.radius - dist;
+                    if (pen <= 0) continue;
+                    FF2.vscale(n, d, 1 / dist);
+                    FF2.vcopy(cp, tipW); FF2.vaddScaled(cp, n, rTip);
+                } else {
+                    const lc = FF2.bodyWorldToLocal(FF2.v3(), b, tipW);
+                    const hit = FF2.bvhClosest(b.bvh, lc, rTip + 2);
+                    if (!hit) continue;
+                    const wp = FF2.bodyLocalToWorld(FF2.v3(), b, hit.point);
+                    const d = FF2.vsub(FF2.v3(), wp, tipW);
+                    let dist = FF2.vlen(d);
+                    const nl = FF2.m3MulV(FF2.v3(), b.R, hit.normal);
+                    if (dist > 1e-6 && FF2.vdot(d, nl) > 0) {
+                        // tip centre inside the body: push it out along the axis
+                        FF2.vcopy(n, dirW);
+                        pen = rTip + dist;
+                    } else if (dist > 1e-6) {
+                        FF2.vscale(n, d, 1 / dist); // from tip toward the surface = push dir
+                        pen = rTip - dist;
+                        if (pen <= 0) continue;
+                    } else {
+                        FF2.vcopy(n, dirW);
+                        pen = rTip;
+                    }
+                    FF2.vcopy(cp, wp);
+                }
+                FF2.wake(b);
+                // positional push-out (launcher is an infinite-mass anchor)
+                FF2.vaddScaled(b.x, n, Math.min(pen, 3));
+                // point impulse: stop approach relative to the moving tip
+                const r = FF2.vsub(FF2.v3(), cp, b.x);
+                const vAt = FF2.vadd(FF2.v3(), b.v, FF2.vcross(FF2.v3(), b.w, r));
+                const rel = FF2.vsub(FF2.v3(), vAt, tipVel);
+                const vn = FF2.vdot(rel, n);
+                if (vn < 0) {
+                    const rxn = FF2.vcross(FF2.v3(), r, n);
+                    const ang = FF2.vdot(rxn, FF2.m3MulV(FF2.v3(), b.invIworld, rxn));
+                    const k = b.invMass + ang;
+                    const j = -(1 + .2) * vn / Math.max(k, 1e-12);
+                    const imp = FF2.vscale(FF2.v3(), n, j);
+                    FF2.vaddScaled(b.v, imp, b.invMass);
+                    FF2.vaddScaled(b.w, FF2.m3MulV(FF2.v3(), b.invIworld, FF2.vcross(FF2.v3(), r, imp)), 1);
+                }
+                // launched: constant force along the axis, applied at the contact
+                if (pushForce) {
+                    const F = FF2.vscale(FF2.v3(), dirW, ud.forceN * 1000);
+                    FF2.vaddScaled(b.v, F, b.invMass * h);
+                    FF2.vaddScaled(b.w, FF2.m3MulV(FF2.v3(), b.invIworld, FF2.vcross(FF2.v3(), r, F)), h);
+                }
+                ud._hitLast = { obj, p: Float64Array.from(cp) };
+            }
+        }
+    }
+
     /* the legacy per-frame ground damping fought the contact solver — off */
     U_ = function() {};
 
@@ -6411,6 +6510,15 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
                 if (!b) continue;
                 pending.push({ p: new A(b.x[0], b.x[1], b.x[2]), d: new A(sp.dir[0], sp.dir[1], sp.dir[2]), F: sp.forceN, label: "バネ", color: 0xf1c40f });
             }
+        }
+        for (const o of F3()) {
+            const ud = o.userData;
+            if (!ud?.isLauncher || !ud.launched || !(ud.forceN > 0) || !ud._hitLast) continue;
+            const b = __bodyByObj.get(o);
+            if (!b) continue;
+            const dirW = FF2.m3MulV(FF2.v3(), b.R, [0, 1, 0]);
+            const p = ud._hitLast.p;
+            pending.push({ p: new A(p[0], p[1], p[2]), d: new A(dirW[0], dirW[1], dirW[2]), F: ud.forceN, label: "発射", color: 0xff5a3c });
         }
         let fMax = 0;
         for (const a of pending) fMax = Math.max(fMax, a.F);
