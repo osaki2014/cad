@@ -28403,7 +28403,15 @@ V("#edge-radius").onchange = e => {
   if (!q) return;
   const t = new K1().setFromObject(q).getSize(new A),
     n = Math.max(0, Math.min(t.x, t.y, t.z) / 2 - .05);
-  q.userData.edgeRadius = Math.max(0, Math.min(n, Number(e.target.value) || 0)), gx(q), q2(), X1(`角Rを ${q.userData.edgeRadius.toFixed(1)} mmに設定しました`)
+  q.userData.edgeRadius = Math.max(0, Math.min(n, Number(e.target.value) || 0));
+  /* v5.1: 構成点編集済みのオブジェクトは、編集後の形状に対してフィレットを
+     適用する（gx はパラメータから作り直すため編集が消えてしまう） */
+  if (q.userData.cp && window.__cpRebuild && window.__cpRebuild(q)) {
+    q2();
+    X1(`角Rを ${q.userData.edgeRadius.toFixed(1)} mmに設定しました（編集形状に適用）`);
+    return;
+  }
+  gx(q), q2(), X1(`角Rを ${q.userData.edgeRadius.toFixed(1)} mmに設定しました`)
 };
 V("#curve-cancel").onclick = () => q0("translate", !0);
 document.querySelectorAll("[data-type]").forEach(e => e.onclick = () => {
@@ -35582,8 +35590,84 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     };
     // cone/pyramid whose APEX carries a curve/bulge/dent: the base->apex profile
     // bows outward (ふくらむ/曲率) or pinches inward (へこむ, しぼんだ) all the way down.
-    const buildProfiledCone = (baseArr, baseModes, baseCurv, baseAmt, apexArr, apexMode, apexAmt, apexCurv) => {
-      const base = buildRing(baseArr, baseModes, baseCurv, baseAmt);
+    /* v5.1: 角フィレット — 構成点編集後の形状（サンプリング済みリング）の
+       鋭い角を円弧近似（2次ベジェ）で丸める。編集後の形に対して適用され、
+       元の形状に戻らない。上下リングは同じ頂点位置で同数の点を挿入するので
+       縦の稜線の対応も崩れない。 */
+    const FILLET_SEG = 8;
+    const turnAt = (pts, j) => {
+      const n = pts.length,
+        p = pts[(j - 1 + n) % n],
+        v = pts[j],
+        q = pts[(j + 1) % n];
+      const d1 = v.clone().sub(p),
+        d2 = q.clone().sub(v);
+      const l1 = d1.length(),
+        l2 = d2.length();
+      if (l1 < 1e-6 || l2 < 1e-6) return 0;
+      return Math.acos(Math.max(-1, Math.min(1, d1.dot(d2) / (l1 * l2))));
+    };
+    const roundCorner = (pts, j, r) => {
+      const n = pts.length,
+        p = pts[(j - 1 + n) % n],
+        v = pts[j],
+        q = pts[(j + 1) % n];
+      const din = v.clone().sub(p),
+        dout = q.clone().sub(v);
+      const l1 = din.length(),
+        l2 = dout.length();
+      const out = [];
+      if (l1 < 1e-6 || l2 < 1e-6) {
+        for (let k = 0; k < FILLET_SEG; k++) out.push(v.clone());
+        return out;
+      }
+      din.multiplyScalar(1 / l1);
+      dout.multiplyScalar(1 / l2);
+      const turn = Math.acos(Math.max(-1, Math.min(1, din.dot(dout))));
+      // 接線カット長 t = r·tan(turn/2)。緩い曲がりは形状保存の細分のみ。
+      const t = turn < .06 ? Math.min(l1, l2) * .45 : Math.min(r * Math.tan(turn / 2), l1 * .49, l2 * .49);
+      const a = v.clone().addScaledVector(din, -t),
+        b = v.clone().addScaledVector(dout, t);
+      for (let k = 0; k < FILLET_SEG; k++) {
+        const s = k / (FILLET_SEG - 1),
+          w = 1 - s;
+        out.push(a.clone().multiplyScalar(w * w).addScaledVector(v, 2 * w * s).addScaledVector(b, s * s));
+      }
+      return out;
+    };
+    // rings: 同じ長さのリング配列（1本または2本）。マークした角を両リング
+    // 同時に丸めて頂点対応を維持する。
+    const roundRings = (rings, r) => {
+      const n = rings[0].length;
+      if (!(r > 0) || n < 3) return rings;
+      const TH = Math.PI / 12; // 15°を超える曲がりを「角」とみなす
+      const marked = [];
+      let any = false;
+      for (let j = 0; j < n; j++) {
+        const m = rings.some(rg => rg.length === n && turnAt(rg, j) > TH);
+        marked.push(m);
+        any = any || m;
+      }
+      if (!any) return rings;
+      return rings.map(rg => {
+        if (rg.length !== n) return rg;
+        const out = [];
+        for (let j = 0; j < n; j++) {
+          if (marked[j]) out.push(...roundCorner(rg, j, r));
+          else out.push(rg[j].clone());
+        }
+        return out;
+      });
+    };
+    const filletOf = (o) => {
+      const a = Number(o.userData.edgeRadius) || 0;
+      const b = o.userData.type === "polygonLoft" && o.userData.polygonLoft ? Number(o.userData.polygonLoft.edgeRadius) || 0 : 0;
+      return Math.max(0, a, b);
+    };
+
+    const buildProfiledCone = (baseArr, baseModes, baseCurv, baseAmt, apexArr, apexMode, apexAmt, apexCurv, fillet) => {
+      let base = buildRing(baseArr, baseModes, baseCurv, baseAmt);
+      if (fillet > 0 && base.length >= 3) base = roundRings([base], fillet)[0];
       const apex = V3(apexArr),
         baseCen = centroid(base);
       const amount = Math.max(0, Math.min(1, apexMode === "curve" ? (apexCurv != null ? apexCurv * .5 : .25) : (apexAmt || 0)));
@@ -35615,15 +35699,20 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
       if (!cp) return;
       ensureCP(o);
       let geo;
+      const fillet = filletOf(o);
       const topApex = cp.rings[1].length === 1 && cp.modes[1][0] !== "linear" && cp.rings[0].length >= 3;
       const botApex = cp.rings[0].length === 1 && cp.modes[0][0] !== "linear" && cp.rings[1].length >= 3;
       if (topApex) {
-        geo = buildProfiledCone(cp.rings[0], cp.modes[0], cp.curv[0], cp.amt[0], cp.rings[1][0], cp.modes[1][0], cp.amt[1][0], cp.curv[1][0]);
+        geo = buildProfiledCone(cp.rings[0], cp.modes[0], cp.curv[0], cp.amt[0], cp.rings[1][0], cp.modes[1][0], cp.amt[1][0], cp.curv[1][0], fillet);
       } else if (botApex) {
-        geo = buildProfiledCone(cp.rings[1], cp.modes[1], cp.curv[1], cp.amt[1], cp.rings[0][0], cp.modes[0][0], cp.amt[0][0], cp.curv[0][0]);
+        geo = buildProfiledCone(cp.rings[1], cp.modes[1], cp.curv[1], cp.amt[1], cp.rings[0][0], cp.modes[0][0], cp.amt[0][0], cp.curv[0][0], fillet);
       } else {
-        const rings = buildMatched(cp);
+        let rings = buildMatched(cp);
         if (rings[0].length < 1 || rings[1].length < 1) return;
+        if (fillet > 0) {
+          if (rings[0].length === rings[1].length && rings[0].length >= 3) rings = roundRings(rings, fillet);
+          else rings = rings.map(rg => rg.length >= 3 ? roundRings([rg], fillet)[0] : rg);
+        }
         geo = loftGeo(rings[0], rings[1]);
       }
       if (!geo) return;
@@ -35710,8 +35799,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
           cp.curv[ri] = ring.map(() => .5);
           cp.amt[ri] = ring.map(() => .3);
         } else if (k === "edgeRadius") {
-          // 角フィレットは構成点編集と併用不可：形状は維持し何もしない
-          return true;
+          // v5.1: フィレットは rebuild 内で編集後の形状に適用される
         }
         rebuild(o);
         return true;
@@ -35722,6 +35810,18 @@ if (typeof module !== "undefined" && module.exports) module.exports = FF2;
     };
     try {
       window.__cpPolyParam = applyPolyParam;
+      window.__cpRebuild = (o) => {
+        try {
+          if (o && o.userData && o.userData.cp) {
+            ensureCP(o);
+            rebuild(o);
+            return true;
+          }
+        } catch (err) {
+          log("cpRebuild", err);
+        }
+        return false;
+      };
     } catch (_) {}
 
     const style = document.createElement("style");
